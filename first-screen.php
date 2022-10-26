@@ -3,7 +3,7 @@
 /*
 Plugin Name: First Screen CSS
 Description: Insert <style>...</style> somewhere high and minify it.
-Version: 0.0.1
+Version: 1.0.0
 Requires at least: 4.7
 Requires PHP: 7.0.0
 Author: Firmcatalyst, Vadim Volkov
@@ -18,7 +18,7 @@ namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
 define( 'FCPFSC', [
-    'dev'            => true,
+    'dev'            => false,
     'prefix'         => 'fcpfsc' . '-',
 ]);
 
@@ -67,14 +67,11 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
 
     ob_start();
 
-    ?>
-    <pre><?php print_r( $csss ) ?></pre>
-    <style id='first-screen-inline-css' type='text/css'><?php
+    ?><style id='first-screen-inline-css' type='text/css'><?php
 
     echo get_css_contents( $csss );
     
-    ?></style>
-    <?php
+    ?></style><?php
 
     $content = ob_get_contents();
     ob_end_clean();
@@ -160,7 +157,11 @@ function fcpfsc_meta_box() {
 
     textarea( (object) [
         'name' => 'css',
-        'placeholder' => 'First Screen inline CSS',
+        'placeholder' => '/* enter your css here */
+* {
+    border: 1px dotted red;
+    box-sizing: border-box;
+}',
         'value' => get_post_meta( $post->ID, FCPFSC['prefix'].'css' )[0],
     ]);
 
@@ -182,6 +183,7 @@ function fcpfsc_meta_box() {
 
     ?>
     <p>Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
+    <p>CSS will be minified before printing.</p>
     <p>You can grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
     <?php
 
@@ -397,8 +399,8 @@ function css_minify($css) {
     $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions
     $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
     $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
-    // ++should also remove 0 from 0.5, but not from svg-s
+    // ++should also remove 0 from 0.5, but not from svg-s?
     return trim( $css );
 };
 
-//++ add the editor-highlighter for css
+//++ add the syntax-highlighter for css
