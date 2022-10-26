@@ -1,16 +1,14 @@
 <?php
-
 /*
-Plugin Name: First Screen CSS
-Description: Insert <style>...</style> somewhere high and minify it.
+Plugin Name: FCP First Screen CSS
+Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which improves the CLS web vital. Or for any other reason.
 Version: 1.0.0
 Requires at least: 4.7
 Requires PHP: 7.0.0
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
-License: GPL v2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: fcpfsc
+License: GPL v3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
 
 namespace FCP\FirstScreenCSS;
@@ -68,16 +66,14 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
     ob_start();
 
     ?><style id='first-screen-inline-css' type='text/css'><?php
-
-    echo get_css_contents( $csss );
-    
+    echo esc_html( css_minify( get_css_contents( $csss ) ) );
     ?></style><?php
 
     $content = ob_get_contents();
     ob_end_clean();
 
     if ( FCPFSC['dev'] ) {  echo $content; return; }
-    echo css_minify( $content );
+    echo $content;
    
 }, 7 );
 
@@ -312,14 +308,14 @@ function select($a) {
         class="<?php echo isset( $a->className ) ? $a->className : '' ?>"><?php
 
         if ( isset( $a->placeholder ) ) { ?>
-            <option value=""><?php echo $a->placeholder ?></option>
+            <option value=""><?php echo esc_html( $a->placeholder ) ?></option>
         <?php } ?>
 
         <?php foreach ( $a->options as $k => $v ) { ?>
             <option
                 value="<?php echo esc_attr( $k ) ?>"
                 <?php echo isset( $a->value ) && $a->value == $k ? 'selected' : '' ?>
-            ><?php echo esc_attr( $v ) ?></option>
+            ><?php echo esc_html( $v ) ?></option>
         <?php } ?>
     </select>
     <?php
@@ -403,4 +399,4 @@ function css_minify($css) {
     return trim( $css );
 };
 
-//++ add the syntax-highlighter for css
+//++ add the syntax-highlighter for css for the next version
