@@ -23,7 +23,7 @@ define( 'FCPFSC', [
 ]);
 
 if( !function_exists( 'get_plugin_data' ) ) { require_once( ABSPATH . 'wp-admin/includes/plugin.php' ); }
-// ++check how and where else it is included get_plugin_data
+
 define( 'FCPFSC_VER', get_plugin_data( __FILE__ )[ 'Version' ] . ( FCPFSC['dev'] ? time() : '' ) );
 
 
@@ -85,24 +85,50 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
 }, 7 );
 
 // admin post type for css-s
-//++ rebuild manually
-require_once( __DIR__ . '/classes/add-post-type.class.php' );
-use \FCP\FirstScreenCSS\FCPAddPostType as addPostType;
-
-new addPostType([
-    'name' => 'FirstScreen CSS',
-    'type' => 'fcpfsc',
-    'slug' => 'fcpfsc',
-    'plural' => 'FirstScreen CSS',
-    'description' => 'CSS to print before everything',
-    'fields' => ['title'],
-    'hierarchical' => false,
-    'public' => false,
-    'gutenberg' => false,
-    'menu_position' => 23,
-    'menu_icon' => 'dashicons-money-alt',
-    'has_archive' => false
-]);
+add_action( 'init', function() {
+    $shorter = [
+        'name' => 'FirstScreen CSS',
+        'plural' => 'FirstScreen CSS',
+        'public' => false,
+    ];
+    $labels = [
+        'name'                => $shorter['plural'],
+        'singular_name'       => $shorter['name'],
+        'menu_name'           => $shorter['plural'],
+        'all_items'           => 'View All ' . $shorter['plural'],
+        'archives'            => 'All ' . $shorter['plural'],
+        'view_item'           => 'View ' . $shorter['name'],
+        'add_new'             => 'Add New',
+        'add_new_item'        => 'Add New ' . $shorter['name'],
+        'edit_item'           => 'Edit ' . $shorter['name'],
+        'update_item'         => 'Update ' . $shorter['name'],
+        'search_items'        => 'Search ' . $shorter['name'],
+        'not_found'           => $shorter['name'] . ' Not Found',
+        'not_found_in_trash'  => $shorter['name'] . ' Not found in Trash',
+    ];
+    $args = [
+        'label'               => $shorter['name'],
+        'description'         => 'CSS to print before everything',
+        'labels'              => $labels,
+        'supports'            => ['title'],
+        'hierarchical'        => false,
+        'public'              => $shorter['public'],
+        'show_in_rest'        => false,
+        'show_ui'             => true,
+        'show_in_menu'        => true,
+        'show_in_nav_menus'   => false,
+        'show_in_admin_bar'   => true,
+        'menu_position'       => 29,
+        'menu_icon'           => 'dashicons-money-alt',
+        'can_export'          => true,
+        'has_archive'         => false,
+        'exclude_from_search' => !$shorter['public'],
+        'publicly_queryable'  => $shorter['public'],
+        'capability_type'     => 'page',
+        'rewrite'             => [ 'slug' => 'fcpfsc' ],
+    ];
+    register_post_type( 'fcpfsc', $args );
+});
 
 // admin meta boxes
 add_action( 'add_meta_boxes', function() {
@@ -110,15 +136,17 @@ add_action( 'add_meta_boxes', function() {
         'first-screen-css',
         'First screen CSS',
         'FCP\FirstScreenCSS\fcpfsc_meta_box',
-        ['fcpfsc'], // ++modify like the billing - so no publish button
+        ['fcpfsc'],
         'normal',
         'high'
     );
+
+    list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
         'first-screen-css',
         'First screen CSS',
         'FCP\FirstScreenCSS\anypost_meta_box',
-        ['page'], //++ all public
+        array_keys( $public_post_types ),
         'side',
         'low'
     );
@@ -128,20 +156,7 @@ function fcpfsc_meta_box() {
     global $post;
 
     // get post types to print options
-    $post_types = get_post_types( [], 'objects' );
-    $public_post_types = [];
-    $archives_post_types = [];
-    $archives_post_types[ 'blog' ] = 'Blog';
-    foreach ( $post_types as $type ) {
-        $type->name = isset( $type->rewrite->slug ) ? $type->rewrite->slug : $type->name;
-        if ( $type->public ) {
-            $public_post_types[ $type->name ] = $type->label;
-        }
-        if ( $type->has_archive ) {
-            $archives_post_types[ $type->name ] = $type->label;
-        }
-    }
-
+    list( 'public' => $public_post_types, 'archieve' => $archives_post_types ) = get_all_post_types();
 
     textarea( (object) [
         'name' => 'css',
@@ -166,8 +181,8 @@ function fcpfsc_meta_box() {
     ]);
 
     ?>
-    <p>Pick the first screen css in a separate meta box, added to every post-type on the website</p>
-    <p>Grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+    <p>Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
+    <p>You can grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
     <?php
 
     wp_nonce_field( FCPFSC['prefix'].'nounce-action', FCPFSC['prefix'].'nounce-name' );
@@ -201,8 +216,11 @@ function anypost_meta_box() {
 
 // style meta boxes
 add_action( 'admin_footer', function() {
-    //++post type or screen filter
-    ?><style type="text/css">
+    global $post;
+    if( $post->post_type !== 'fcpfsc' ) { return; }
+
+    ?>
+<style type="text/css">
 #first-screen-css textarea {
     width:100%;
     height:60vh;
@@ -217,7 +235,8 @@ add_action( 'admin_footer', function() {
 #first-screen-css p + p {
     margin-top:10px;
 }
-    </style><?php
+</style>
+    <?php
 });
 
 // save meta data
@@ -348,19 +367,38 @@ function get_css_contents( $ids ) {
     return implode( '', $metas );
 }
 
+function get_all_post_types() {
+    static $public = [], $archieve = [];
+
+    if ( !empty( $public ) ) { return [ 'all' => $all, 'public' => $public, 'archieve' => $archieve ]; }
+
+    $all = get_post_types( [], 'objects' );
+    $public = [];
+    $archieve = [];
+    $archieve[ 'blog' ] = 'Blog';
+    foreach ( $all as $type ) {
+        $type->name = isset( $type->rewrite->slug ) ? $type->rewrite->slug : $type->name;
+        if ( $type->public ) {
+            $public[ $type->name ] = $type->label;
+        }
+        if ( $type->has_archive ) {
+            $archieve[ $type->name ] = $type->label;
+        }
+    }
+
+    return [ 'all' => $all, 'public' => $public, 'archieve' => $archieve ];
+
+}
+
 function css_minify($css) {
     $css = preg_replace( '/\/\*(?:.*?)*\*\//', '', $css ); // remove comments
     $css = preg_replace( '/\s+/', ' ', $css ); // one-line & only single speces
     $css = preg_replace( '/ ?([\{\};:\>\~\+]) ?/', '$1', $css ); // remove spaces
-    $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions ++ check this one, Y does it exist
+    $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions
     $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
     $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
     // ++should also remove 0 from 0.5, but not from svg-s
     return trim( $css );
 };
 
-
-//++ rest of the ++s
-//++ add improvements from add-bills
 //++ add the editor-highlighter for css
-//++ remove the classes
