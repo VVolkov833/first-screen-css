@@ -30,17 +30,6 @@ define( 'FCPFSC_VER', get_plugin_data( __FILE__ )[ 'Version' ] . ( FCPFSC['dev']
 // print the styles
 add_action( 'wp_head', function() { // include the first-screen styles, instead of enqueuing
 
-    $minify = function ($text) {
-        $text = preg_replace( '/\/\*(?:.*?)*\*\//', '', $text ); // remove comments
-        $text = preg_replace( '/\s+/', ' ', $text ); // one-line & only single speces
-        $text = preg_replace( '/ ?([\{\};:\>\~\+]) ?/', '$1', $text ); // remove spaces
-        $text = preg_replace( '/\+(\d)/', ' + $1', $text ); // restore spaces in functions
-        $text = preg_replace( '/(?:[^\}]*)\{\}/', '', $text ); // remove empty properties
-        $text = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $text ); // remove last ; and spaces
-        // ++can also remove 0 from 0.5
-        return trim( $text );
-    };
-
     // collect csss to print on the post
     $csss = [];
 
@@ -64,16 +53,17 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
         }
         unset( $css_id );
         // get css by post-type
-        $csss = array_merge( $csss, get_meta_values( FCPFSC['prefix'].'post-types', $post_type ) );
+        $csss = array_merge( $csss, get_css_ids( FCPFSC['prefix'].'post-types', $post_type ) );
     }
     if ( is_home() || is_archive() && ( !$post_type || $post_type === 'page' ) ) {
         // get css for blog
-        $csss = array_merge( $csss, get_meta_values( FCPFSC['prefix'].'post-archives', $post_type ) );
+        $csss = array_merge( $csss, get_css_ids( FCPFSC['prefix'].'post-archives', 'blog' ) );
     }
     if ( is_post_type_archive( $post_type ) ) {
         // get css for custom post type archive
-        $csss = array_merge( $csss, get_meta_values( FCPFSC['prefix'].'post-archives', $post_type ) );
+        $csss = array_merge( $csss, get_css_ids( FCPFSC['prefix'].'post-archives', $post_type ) );
     }
+
 
     ob_start();
 
@@ -81,7 +71,7 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
     <pre><?php print_r( $csss ) ?></pre>
     <style id='first-screen-inline-css' type='text/css'><?php
 
-    echo "{works}";
+    echo get_css_contents( $csss );
     
     ?></style>
     <?php
@@ -90,7 +80,7 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
     ob_end_clean();
 
     if ( FCPFSC['dev'] ) {  echo $content; return; }
-    echo $minify( $content );
+    echo css_minify( $content );
    
 }, 7 );
 
@@ -141,6 +131,7 @@ function fcpfsc_meta_box() {
     $post_types = get_post_types( [], 'objects' );
     $public_post_types = [];
     $archives_post_types = [];
+    $archives_post_types[ 'blog' ] = 'Blog';
     foreach ( $post_types as $type ) {
         $type->name = isset( $type->rewrite->slug ) ? $type->rewrite->slug : $type->name;
         if ( $type->public ) {
@@ -253,20 +244,10 @@ add_action( 'save_post', function( $postID ) {
         update_post_meta( $postID, $f, $_POST[ $f ] );
     }
 });
-//require_once( __DIR__ . '/classes/add-post-type.class.php' );
 
 
-//use FCPAddPostType as AddType;
+// functions -------------------------------------
 
-// add post type for the styles
-
-// add needed meta fields
-
-// apply meta boxes to the pages
-
-// apply current style to a post type (like all posts)
-
-// maybe add arcnives?
 
 function textarea($a) {
     ?>
@@ -335,7 +316,7 @@ function input($a) {
     <?php
 }
 
-function get_meta_values( $key, $type = 'post' ) {
+function get_css_ids( $key, $type = 'post' ) {
 
     global $wpdb;
 
@@ -350,4 +331,36 @@ function get_meta_values( $key, $type = 'post' ) {
     return $metas;
 }
 
-//++ add blog as the archive
+function get_css_contents( $ids ) {
+
+    if ( empty( $ids ) ) { return; }
+
+    global $wpdb;
+
+    $metas = $wpdb->get_col( $wpdb->prepare('
+
+        SELECT `meta_value`
+        FROM `'.$wpdb->postmeta.'`
+        WHERE `meta_key` = %s AND `post_id` IN ( '.join( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+
+    ', array_merge( [ FCPFSC['prefix'].'css'], $ids ) ) );
+
+    return implode( '', $metas );
+}
+
+function css_minify($css) {
+    $css = preg_replace( '/\/\*(?:.*?)*\*\//', '', $css ); // remove comments
+    $css = preg_replace( '/\s+/', ' ', $css ); // one-line & only single speces
+    $css = preg_replace( '/ ?([\{\};:\>\~\+]) ?/', '$1', $css ); // remove spaces
+    $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions ++ check this one, Y does it exist
+    $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
+    $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
+    // ++should also remove 0 from 0.5, but not from svg-s
+    return trim( $css );
+};
+
+
+//++ rest of the ++s
+//++ add improvements from add-bills
+//++ add the editor-highlighter for css
+//++ remove the classes
