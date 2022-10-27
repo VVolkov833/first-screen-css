@@ -26,7 +26,7 @@ define( 'FCPFSC_VER', get_plugin_data( __FILE__ )[ 'Version' ] . ( FCPFSC['dev']
 
 
 // print the styles
-add_action( 'wp_head', function() { // include the first-screen styles, instead of enqueuing
+add_action( 'wp_enqueue_scripts', function() { // include the first-screen styles, instead of enqueuing
 
     // collect csss to print on the post
     $csss = [];
@@ -62,19 +62,12 @@ add_action( 'wp_head', function() { // include the first-screen styles, instead 
         $csss = array_merge( $csss, get_css_ids( FCPFSC['prefix'].'post-archives', $post_type ) );
     }
 
+    if ( empty( $csss ) ) { return; }
 
-    ob_start();
+    wp_register_style( 'first-screen-inline', false );
+    wp_enqueue_style( 'first-screen-inline' );
+    wp_add_inline_style( 'first-screen-inline', css_minify( get_css_contents( $csss ) ) );
 
-    ?><style id='first-screen-inline-css' type='text/css'><?php
-    echo esc_html( css_minify( get_css_contents( $csss ) ) );
-    ?></style><?php
-
-    $content = ob_get_contents();
-    ob_end_clean();
-
-    if ( FCPFSC['dev'] ) {  echo $content; return; }
-    echo $content;
-   
 }, 7 );
 
 // admin post type for css-s
@@ -395,8 +388,10 @@ function css_minify($css) {
     $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions
     $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
     $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
-    // ++should also remove 0 from 0.5, but not from svg-s?
+    // ++ should also remove 0 from 0.5, but not from svg-s?
+    // ++ try removing ', ' with ','
     return trim( $css );
 };
 
 //++ add the syntax-highlighter for css for the next version
+//++ don't print not published (and don't offer?? maybe they want to temporarily disable for testing??)
