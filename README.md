@@ -1,4 +1,4 @@
-# FCP Lightest Lightbox
+# FCP First Screen CSS
 
 Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
 
