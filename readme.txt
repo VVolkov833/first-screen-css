@@ -2,6 +2,7 @@
 Contributors: Firmcatalyst
 Tags: inline, css, firstscreen, cls, style
 Requires at least: 5.8
+Tested up to: 6.0
 Requires PHP: 8.0.0
 Stable tag: 1.0.0
 Author: Firmcatalyst, Vadim Volkov
