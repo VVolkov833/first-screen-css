@@ -23,7 +23,7 @@ define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
 // print the styles
 add_action( 'wp_enqueue_scripts', function() {
 
-    // collect csss to print on the post
+    // collect css-s to print on the post
     $csss = [];
 
     // get the post type
@@ -68,8 +68,8 @@ add_action( 'wp_enqueue_scripts', function() {
 // admin post type for css-s
 add_action( 'init', function() {
     $shorter = [
-        'name' => 'FirstScreen CSS',
-        'plural' => 'FirstScreen CSS',
+        'name' => 'First Screen CSS',
+        'plural' => 'First Screen CSS',
         'public' => false,
     ];
     $labels = [
@@ -91,7 +91,7 @@ add_action( 'init', function() {
         'label'               => $shorter['name'],
         'description'         => 'CSS to print before everything',
         'labels'              => $labels,
-        'supports'            => ['title'],
+        'supports'            => ['title', 'editor'],
         'hierarchical'        => false,
         'public'              => $shorter['public'],
         'show_in_rest'        => false,
@@ -114,7 +114,7 @@ add_action( 'init', function() {
 add_action( 'add_meta_boxes', function() {
     add_meta_box(
         'first-screen-css',
-        'First screen CSS',
+        'Bulk apply the First Screen CSS',
         'FCP\FirstScreenCSS\fcpfsc_meta_box',
         FCPFSC_SLUG,
         'normal',
@@ -124,7 +124,7 @@ add_action( 'add_meta_boxes', function() {
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
         'first-screen-css',
-        'First screen CSS',
+        'Select First Screen CSS',
         'FCP\FirstScreenCSS\anypost_meta_box',
         array_keys( $public_post_types ),
         'side',
@@ -137,16 +137,6 @@ function fcpfsc_meta_box() {
 
     // get post types to print options
     list( 'public' => $public_post_types, 'archive' => $archives_post_types ) = get_all_post_types();
-
-    textarea( (object) [
-        'name' => 'css',
-        'placeholder' => '/* enter your css here */
-* {
-    border: 1px dotted red;
-    box-sizing: border-box;
-}',
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'css' )[0],
-    ]);
 
     ?><p><strong>Apply to the following post types</strong></p><?php
 
@@ -191,7 +181,7 @@ function anypost_meta_box() {
 
     select( (object) [
         'name' => 'id',
-        'placeholder' => 'Select the FirstScreen css',
+        'placeholder' => '------',
         'options' => $css_posts,
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0],
     ]);
@@ -201,15 +191,12 @@ function anypost_meta_box() {
 
 // style meta boxes
 add_action( 'admin_footer', function() {
-    global $post; //++replace with the screen and maybe add hook?
-    if( $post->post_type !== FCPFSC_SLUG ) { return; }
+
+    $screen = get_current_screen();
+    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; }
 
     ?>
 <style type="text/css">
-#first-screen-css textarea {
-    width:100%;
-    height:60vh;
-}
 #first-screen-css select {
     width:100%;
     box-sizing:border-box;
@@ -232,7 +219,21 @@ add_action( 'admin_footer', function() {
     <?php
 });
 
-// codemirror editor to the css textarea
+// codemirror editor instead of tinymce
+add_filter( 'wp_editor_settings', function($settings, $editor_id) {
+
+    if ( $editor_id !== 'content' ) { return $settings; }
+    
+    $screen = get_current_screen();
+    if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG ) { return $settings; }
+
+    $settings['tinymce']   = false;
+    $settings['quicktags'] = false;
+    $settings['media_buttons'] = false;
+
+    return $settings;
+}, 10, 2 );
+
 add_action( 'admin_enqueue_scripts', function( $hook ) {
 
     if ( !in_array( $hook, ['post.php', 'post-new.php'] ) ) { return; }
@@ -243,7 +244,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $cm_settings['codeEditor'] = wp_enqueue_code_editor( ['type' => 'text/css'] );
     wp_localize_script( 'jquery', 'cm_settings', $cm_settings );
     wp_enqueue_script( 'wp-theme-plugin-editor' );
-    wp_add_inline_script( 'wp-theme-plugin-editor', 'jQuery(document).ready(function($){wp.codeEditor.initialize($(\'#'.FCPFSC_PREF.'css\'),cm_settings);});' );
+    wp_add_inline_script( 'wp-theme-plugin-editor', 'jQuery(document).ready(function($){const $ed=$(\'#content\');$ed.attr(\'placeholder\',\'/* enter your css here */\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}\');wp.codeEditor.initialize($ed,cm_settings);});' );
     wp_enqueue_style( 'wp-codemirror' );
 });
 
@@ -259,7 +260,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'css', 'post-types', 'post-archives' ];
+        $fields = [ 'post-types', 'post-archives' ];
     } else {
         $fields = [ 'id' ];
     }
@@ -289,46 +290,15 @@ function sanitize( $value, $field = '' ) {
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
         break;
         case( 'id' ):
-            return is_numeric( $value ) ? $value : '';
-        break;
-        case( 'css' ):
-            // validation from WP_Customize_Custom_CSS_Setting::validate
-            if ( preg_match( '#</?\w+#', $value ) ) {
-                wp_die( '
-                <p><strong>A possible issue</strong></p>
-                <p>If you are using SVG vector images as a background, for example, replace the HTML special characters:</p>
-                <ul>
-                    <li>&lt; with %3C</li>
-                    <li>&gt; with %3E</li>
-                    <li># with %23</li>
-                </ul>
-                ', __( 'Markup is not allowed in CSS.' ) );
-            }
-            $value = strip_tags( $value );
-            // $value = preg_replace( '/<([^>]+)>/', '%3C$1%3E', $value ); // keep `url("data:image/svg+xml,<svg ` working yet stay inside <style></style>
+            if ( !is_numeric( $value ) ) { return ''; }
+            if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
             return $value;
-            // `sanitize_textarea_field` ruins data: svg
-            // `wp_kses ruins` the `>` css operator
-            // `strip_tags` might ruin svg
         break;
     }
 
-    return $value;
+    return '';
 }
 
-function textarea($a) {
-    ?>
-<textarea
-    name="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
-    id="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
-    rows="<?php echo isset( $a->rows ) ? esc_attr( $a->rows ) : '10' ?>" cols="<?php echo isset( $a->cols ) ? esc_attr( $a->cols ) : '50' ?>"
-    placeholder="<?php echo isset( $a->placeholder ) ? esc_attr( $a->placeholder ) : '' ?>"
-    class="<?php echo isset( $a->className ) ? esc_attr( $a->className ) : '' ?>"
-><?php
-    echo esc_textarea( isset( $a->value ) ? $a->value : '' )
-?></textarea>
-    <?php
-}
 
 function checkboxes($a) {
     ?>
@@ -371,17 +341,6 @@ function select($a) {
     <?php
 }
 
-function input($a) {
-    ?>
-    <input type="text"
-        name="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
-        id="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
-        placeholder="<?php echo isset( $a->placeholder ) ? esc_attr( $a->placeholder )  : '' ?>"
-        value="<?php echo isset( $a->value ) ? esc_attr( $a->value ) : '' ?>"
-        class="<?php echo isset( $a->className ) ? esc_attr( $a->className ) : '' ?>"
-    />
-    <?php
-}
 
 function get_css_ids( $key, $type = 'post' ) {
 
@@ -406,11 +365,11 @@ function get_css_contents( $ids ) {
 
     $metas = $wpdb->get_col( $wpdb->prepare('
 
-        SELECT `meta_value`
-        FROM `'.$wpdb->postmeta.'`
-        WHERE `meta_key` = %s AND `post_id` IN ( '.join( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+        SELECT `post_content`
+        FROM `'.$wpdb->posts.'`
+        WHERE `post_status` = %s AND `post_type` = %s AND `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', array_merge( [ FCPFSC_PREF.'css'], $ids ) ) );
+    ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
 
     return implode( '', $metas );
 }
@@ -451,7 +410,6 @@ function css_minify($css) {
     return trim( $css );
 };
 
-//++ add the syntax-highlighter for css for the next version
 //++ don't print not published (and don't offer?? maybe they want to temporarily disable for testing??)
 //++ notifications & saving hook for post type https://stackoverflow.com/questions/20870615/validating-post-title-and-content-in-wordpress
     //https://wordpress.stackexchange.com/questions/63384/how-to-validate-custom-fields-in-custom-post-type
