@@ -306,17 +306,18 @@ add_filter( 'wp_insert_post_data', function($data) {
         }, $filtered );
 
         if ( $svg_sanitized === null ) {
-            $errors['tags'] = 'Please urlencode the SVG';
+            $errors['tags'] = 'SVG tags must be escaped by urlencode.';
         } else {
             $filtered = $svg_sanitized;
         }
     }
     // tags still exist, forbid that
     if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
-        $errors['tags'] = 'Please don\'t use tags in CSS';
+        $errors['tags'] = __( 'Markup is not allowed in CSS.' );
     }
 
     // ++add parser sometime later maybe
+    // ++safecss_filter_attr($css)??
 
     // right
     if ( empty( $errors ) ) {
@@ -357,7 +358,7 @@ add_action( 'admin_notices', function () {
     }
 
     if ( empty( $errors ) ) { return; }
-    $errors[] = 'The content can not be applied to selected posts due to errors in the CSS content';
+    $errors[] = 'The CSS content can not be applied to selected posts due to errors. Press Publish or Update to see the errors.';
     ?>
 
     <div class="notice notice-error"><ul>
