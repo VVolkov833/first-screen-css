@@ -205,26 +205,26 @@ add_action( 'admin_footer', function() {
     if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; }
 
     ?>
-<style type="text/css">
-#first-screen-css select {
-    width:100%;
-    box-sizing:border-box;
-}
-#first-screen-css fieldset label {
-    display:inline-block;
-    width:90px;
-    margin-right:12px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-#first-screen-css p {
-    margin:30px 0 10px;
-}
-#first-screen-css p + p {
-    margin-top:10px;
-}
-</style>
+    <style type="text/css">
+    #first-screen-css select {
+        width:100%;
+        box-sizing:border-box;
+    }
+    #first-screen-css fieldset label {
+        display:inline-block;
+        width:90px;
+        margin-right:12px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    #first-screen-css p {
+        margin:30px 0 10px;
+    }
+    #first-screen-css p + p {
+        margin-top:10px;
+    }
+    </style>
     <?php
 });
 
@@ -276,7 +276,7 @@ add_action( 'save_post', function( $postID ) {
 
     foreach ( $fields as $f ) {
         $f = FCPFSC_PREF . $f;
-        if ( empty( $_POST[ $f ] ) || empty( $new_value = sanitize( $_POST[ $f ], $f ) ) ) {
+        if ( empty( $_POST[ $f ] ) || empty( $new_value = sanitize_meta( $_POST[ $f ], $f ) ) ) {
             delete_post_meta( $postID, $f );
             continue;
         }
@@ -284,10 +284,95 @@ add_action( 'save_post', function( $postID ) {
     }
 });
 
+// filter css
+add_filter( 'wp_insert_post_data', function($data) {
+
+    if ( $data['post_type'] !== FCPFSC_SLUG ) { return $data; }
+
+    $errors = [];
+
+    $filtered = wp_unslash( $data['post_content'] );
+
+    // track tags
+    // try to escape svgs
+    if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
+        // the idea is taken from https://github.com/yoksel/url-encoder/
+        $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
+            return 'url('.$m[1].'data:image/svg+xml'
+                .preg_replace_callback( '/[\r\n%#\(\)<>\?\[\]\\\\^\`\{\}\|]+/', function($m) {
+                    return urlencode( $m[0] );
+                }, urldecode( $m[2] ) )
+                .$m[1].')';
+        }, $filtered );
+
+        if ( $svg_sanitized === null ) {
+            $errors['tags'] = 'Please urlencode the SVG';
+        } else {
+            $filtered = $svg_sanitized;
+        }
+    }
+    // tags still exist, forbid that
+    if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
+        $errors['tags'] = 'Please don\'t use tags in CSS';
+    }
+
+    // ++add parser sometime later maybe
+
+    // right
+    if ( empty( $errors ) ) {
+        $data['post_content_filtered'] = css_minify( wp_slash( $filtered ) ); // return slashes, and they will be stripped again right after
+        return $data;
+    }
+
+    // wrong
+    $data['post_content_filtered'] = '';
+
+    update_option( FCPFSC_PREF.'_post_errors', $errors );
+
+    add_filter( 'redirect_post_location', function($location) {
+        $location = remove_query_arg( 'message', $location );
+        $location = add_query_arg( 'css_content', 'wrong', $location );
+        return $location;
+    });
+
+    return $data;
+
+}, 10 );
+
+// message on errors in css
+add_action( 'admin_notices', function () {
+
+    $errors = [];
+
+    if ( isset( $_GET['css_content'] ) && $_GET['css_content'] === 'wrong' ) {
+        $errors = get_option( FCPFSC_PREF.'_post_errors' );
+        delete_option( FCPFSC_PREF.'_post_errors' );
+    }
+
+    if ( empty( $errors ) ) {
+        global $post;
+        if ( empty( $post->post_content_filtered ) ) {
+            $errors[] = 'The CSS is incorrect. Please check it\'s syntax.';
+        }
+    }
+
+    if ( empty( $errors ) ) { return; }
+    $errors[] = 'The content can not be applied to selected posts due to errors in the CSS content';
+    ?>
+
+    <div class="notice notice-error"><ul>
+    <?php array_walk( $errors, function($a) { ?>
+        <li><?php echo wp_kses( $a, 'strip' ) ?></li>
+    <?php }) ?>
+    </ul></div>
+
+    <?php
+});
+
 
 // functions -------------------------------------
 
-function sanitize( $value, $field = '' ) {
+function sanitize_meta( $value, $field ) {
 
     $field = ( strpos( $field, FCPFSC_PREF ) === 0 ) ? substr( $field, strlen( FCPFSC_PREF ) ) : $field;
 
@@ -381,7 +466,6 @@ function get_css_contents_filtered( $ids ) {
     ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
 
     return implode( '', $metas );
-    // ++use post_content_filtered to minify css on submit, instead of every time on print
 }
 
 function get_all_post_types() {
@@ -419,110 +503,3 @@ function css_minify($css) {
     // ++ remove space between %3E %3C and before %3E and /%3E
     return trim( $css );
 };
-
-
-
-add_action( 'save_post_'.FCPFSC_SLUG, function($post_ID,$post) {
-
-    if ( $post->post_status === 'trash' ) { return; }
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-
-    $errors = [];
-
-    if ( empty( $post->post_title ) ) {
-        $errors['title'] = 'The title is required';
-    }
-
-    if ( empty( $errors ) ) { return; }
-
-    update_option( FCPFSC_PREF.'post_errors', $errors );
-
-    add_filter('redirect_post_location', function($location) {
-        $location = remove_query_arg( 'message', $location );
-        $location = add_query_arg( 'custom_validation', 'failed', $location );
-        return $location;
-    });
-
-}, 10, 2);
-
-/*
-// We use this action to get the data before and after the update in order to revert the data if validation fails
-add_action('post_updated', 'custom_set_old_post_data_if_error', 10, 3);
-
-if (!function_exists('custom_set_old_post_data_if_error')) {
-    function custom_set_old_post_data_if_error(int $post_ID, WP_Post $post_after, WP_Post $post_before)
-    {
-        // Exit early if post_updated is triggered when trashing the post
-        if ($post_after->post_status === 'trash' || $post_after->post_type !== 'your_custom_post_type') {
-            return;
-        }
-
-        if (empty($post_after->post_title) || strlen($post_after->post_title) > 100) {
-            // We must remove this action or it will loop forever since we use wp_update_post below
-            remove_action('post_updated', 'custom_set_old_post_data_if_error');
-
-
-            // Set old `post_title` and `post_status` if validation fails
-            wp_update_post(
-                [
-                    'ID' => $post_after->ID,
-                    'post_title' => $post_before->post_title,
-                    'post_status' => $post_before->post_status,
-                ]
-            );
-
-            add_action('post_updated', 'custom_set_old_post_data_if_error');
-        }
-    }
-}
-//*/
-
-// Add new admin message
-add_action( 'admin_notices', function () {
-
-    if ( !isset( $_GET['custom_validation'] ) || $_GET['custom_validation'] !== 'failed' ) { return; }
-
-    $errors = get_option('post_errors');
-    delete_option('post_errors');
-
-    $display = '<div id="notice" class="error"><ul>';
-    foreach ( $errors as $error ) {
-        $display .= '<li>' . $error . '</li>';
-    }
-    $display .= '</ul></div>';
-
-    echo $display;
-
-    ?>
-    <script>
-        jQuery(function($) {
-            $("#title").css({"border": "1px solid red"})
-        });
-    </script>
-    <?php
-});
-
-
-// filter css
-add_filter( 'wp_insert_post_data', function($data) {
-
-    if ( $data['post_type'] !== FCPFSC_SLUG ) { return $data; }
-
-    $data['post_content_filtered'] = wp_unslash( $data['post_content'] );
-
-    // replace < > from inside svgs
-    // check if other tags are present //if ( preg_match( '#</?\w+#', $css ) ) {
-    // don't save filtered if not valid + print admin notice
-    // slash back as it will be unslashed anyways
-
-    return $data;
-
-}, 10 );
-//*/
-
-//++ don't print not published (and don't offer?? maybe they want to temporarily disable for testing??)
-//++ notifications & saving hook for post type https://stackoverflow.com/questions/20870615/validating-post-title-and-content-in-wordpress
-    //https://wordpress.stackexchange.com/questions/63384/how-to-validate-custom-fields-in-custom-post-type
-    //https://stackoverflow.com/questions/13216633/field-validation-and-displaying-error-in-wordpress-custom-post-type
-    //https://www.cozmoslabs.com/docs/profile-builder-2/developers-knowledge-base/custom-fields/add-extra-validation-to-a-custom-field/
-//++ !!use the wp validation class
