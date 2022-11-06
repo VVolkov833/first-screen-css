@@ -141,63 +141,6 @@ add_action( 'add_meta_boxes', function() {
     );
 });
 
-function fcpfsc_meta_box() {
-    global $post;
-
-    // get post types to print options
-    list( 'public' => $public_post_types, 'archive' => $archives_post_types ) = get_all_post_types();
-
-    ?><p><strong>Apply to the following post types</strong></p><?php
-
-    checkboxes( (object) [
-        'name' => 'post-types',
-        'options' => $public_post_types,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-types' )[0],
-    ]);
-
-    ?><p><strong>Apply to the Archive pages of the following post types</strong></p><?php
-
-    checkboxes( (object) [
-        'name' => 'post-archives',
-        'options' => $archives_post_types,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-archives' )[0],
-    ]);
-
-    ?>
-    <p>Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
-    <p>CSS will be minified before printing.</p>
-    <p>You can grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
-    <?php
-
-    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
-}
-
-function anypost_meta_box() {
-    global $post;
-
-    // get css post types
-    $css_posts0 = get_posts([
-        'post_type' => FCPFSC_SLUG,
-        'orderby' => 'post_title',
-        'order'   => 'ASC',
-        'post_status' => ['any', 'active'],
-        'posts_per_page' => -1,
-    ]);
-    $css_posts = [];
-    foreach( $css_posts0 as $v ){
-        $css_posts[ $v->ID ] = $v->post_title ? $v->post_title : __( '(no title)' );
-    }
-
-    select( (object) [
-        'name' => 'id',
-        'placeholder' => '------',
-        'options' => $css_posts,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0],
-    ]);
-
-    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
-}
-
 // style meta boxes
 add_action( 'admin_footer', function() {
 
@@ -294,7 +237,7 @@ add_filter( 'wp_insert_post_data', function($data) {
     $filtered = wp_unslash( $data['post_content'] );
 
     // track tags
-    // try to escape svgs
+    // try to escape svgs with url-encoding
     if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
         // the idea is taken from https://github.com/yoksel/url-encoder/
         $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
@@ -311,15 +254,16 @@ add_filter( 'wp_insert_post_data', function($data) {
             $filtered = $svg_sanitized;
         }
     }
-    // tags still exist, forbid that
+    // if tags still exist, forbid that
+    // the idea is taken from WP_Customize_Custom_CSS_Setting::validate as well as the translation
     if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
-        $errors['tags'] = __( 'Markup is not allowed in CSS.' );
+        $errors['tags'] = 'HTML ' . __( 'Markup is not allowed in CSS.' );
     }
 
-    // ++add parser sometime later maybe
+    // ++maybe add parser sometime later
     // ++safecss_filter_attr($css)??
 
-    // right
+    // correct
     if ( empty( $errors ) ) {
         $data['post_content_filtered'] = css_minify( wp_slash( $filtered ) ); // return slashes, and they will be stripped again right after
         return $data;
@@ -500,7 +444,65 @@ function css_minify($css) {
     $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
     $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
     // ++ should also remove 0 from 0.5, but not from svg-s?
-    // ++ try removing ', ' with ','
+    // ++ try replacing ', ' with ','
     // ++ remove space between %3E %3C and before %3E and /%3E
     return trim( $css );
 };
+
+// meta boxes
+function fcpfsc_meta_box() {
+    global $post;
+
+    // get post types to print options
+    list( 'public' => $public_post_types, 'archive' => $archives_post_types ) = get_all_post_types();
+
+    ?><p><strong>Apply to the following post types</strong></p><?php
+
+    checkboxes( (object) [
+        'name' => 'post-types',
+        'options' => $public_post_types,
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-types' )[0],
+    ]);
+
+    ?><p><strong>Apply to the Archive pages of the following post types</strong></p><?php
+
+    checkboxes( (object) [
+        'name' => 'post-archives',
+        'options' => $archives_post_types,
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-archives' )[0],
+    ]);
+
+    ?>
+    <p>Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
+    <p>CSS will be minified before printing.</p>
+    <p>You can grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+    <?php
+
+    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
+}
+
+function anypost_meta_box() {
+    global $post;
+
+    // get css post types
+    $css_posts0 = get_posts([
+        'post_type' => FCPFSC_SLUG,
+        'orderby' => 'post_title',
+        'order'   => 'ASC',
+        'post_status' => ['any', 'active'],
+        'posts_per_page' => -1,
+    ]);
+    $css_posts = [];
+    foreach( $css_posts0 as $v ){
+        $css_posts[ $v->ID ] = $v->post_title ? $v->post_title : __( '(no title)' );
+    }
+
+    select( (object) [
+        'name' => 'id',
+        'placeholder' => '------',
+        'options' => $css_posts,
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0],
+    ]);
+
+    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
+}
