@@ -232,6 +232,13 @@ add_filter( 'wp_insert_post_data', function($data) {
 
     if ( $data['post_type'] !== FCPFSC_SLUG ) { return $data; }
 
+    // empty is not an error
+    if ( trim( $data['post_content'] ) === '' ) {
+        $data['post_content_filtered'] = '';
+        return $data;
+    }
+
+    // process errors
     $errors = [];
 
     $filtered = wp_unslash( $data['post_content'] );
@@ -287,6 +294,9 @@ add_filter( 'wp_insert_post_data', function($data) {
 // message on errors in css
 add_action( 'admin_notices', function () {
 
+    $screen = get_current_screen();
+    if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG || $screen->base !== 'post' || $screen->action === 'add' ) { return; }
+
     $errors = [];
 
     if ( isset( $_GET['css_content'] ) && $_GET['css_content'] === 'wrong' ) {
@@ -296,7 +306,7 @@ add_action( 'admin_notices', function () {
 
     if ( empty( $errors ) ) {
         global $post;
-        if ( empty( $post->post_content_filtered ) ) {
+        if ( empty( $post->post_content_filtered ) && !empty( trim( $post->post_content ) ) ) {
             $errors[] = 'The CSS is incorrect. Please check it\'s syntax.';
         }
     }
