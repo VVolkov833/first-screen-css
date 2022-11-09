@@ -1,10 +1,10 @@
-=== FCP Lightest Lightbox ===
+=== FCP First Screen CSS ===
 Contributors: Firmcatalyst
-Tags: inline, css, firstscreen, cls, style
+Tags: inline, css, firstscreen, style, web vitals, cls, fcp
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.0.0
-Stable tag: 1.0.0
+Stable tag: 1.1
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
@@ -14,13 +14,13 @@ FCP First Screen CSS inline
 
 == Description ==
 
-Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
+Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS and FCP web vitals. Or for any other reason.
 
 = Features =
 
 * Apply to any single post / page / custom post-type
 * Apply to all posts of a particular public post-type
-* Apply to the blog or the archive page of a post-type with archive support
+* Apply to the blog or any archive page of a post-type with archive support
 * It minifies the css before printing
 
 = Usage =
@@ -45,6 +45,10 @@ You can modify the code for your needs, or suggest improvemens on [GitHub](https
 Waiting for your questions, which you can ask [here](https://firmcatalyst.com/contact/) or via GitHub.
 
 == Upgrade Notice ==
+
+= 1.1 =
+
+* Excluded Front Page from the bulk options, as it stands out in most cases
 
 = 1.0 =
 

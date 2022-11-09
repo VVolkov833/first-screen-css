@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.0.0
+Version: 1.1.0
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.0.0
@@ -46,7 +46,9 @@ add_action( 'wp_enqueue_scripts', function() {
         }
         unset( $css_id );
         // get css by post-type
-        $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-types', $post_type ) );
+        if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they are mostly stand out
+            $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-types', $post_type ) );
+        }
     }
     if ( is_home() || is_archive() && ( !$post_type || $post_type === 'page' ) ) {
         // get css for blog
@@ -155,11 +157,9 @@ add_action( 'admin_footer', function() {
     }
     #first-screen-css fieldset label {
         display:inline-block;
-        width:90px;
-        margin-right:12px;
+        min-width:90px;
+        margin-right:16px;
         white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
     }
     #first-screen-css p {
         margin:30px 0 10px;
@@ -406,7 +406,7 @@ function get_css_ids( $key, $type = 'post' ) {
     return $metas;
 }
 
-function get_css_contents_filtered( $ids ) {
+function get_css_contents_filtered( $ids ) { // ++add proper ordering
 
     if ( empty( $ids ) ) { return; }
 
@@ -432,13 +432,15 @@ function get_all_post_types() {
     $public = [];
     $archive = [];
     $archive[ 'blog' ] = 'Blog';
+    usort( $all, function($a,$b) { return strcasecmp( $a->label, $b->label ); });
     foreach ( $all as $type ) {
         $type->name = isset( $type->rewrite->slug ) ? $type->rewrite->slug : $type->name;
-        if ( $type->public ) {
-            $public[ $type->name ] = $type->label;
-        }
         if ( $type->has_archive ) {
             $archive[ $type->name ] = $type->label;
+        }
+        if ( $type->public ) {
+            if ( $type->name === 'page' ) { $type->label .= ' (except Front Page)'; }
+            $public[ $type->name ] = $type->label;
         }
     }
 
@@ -483,9 +485,9 @@ function fcpfsc_meta_box() {
     ]);
 
     ?>
-    <p>Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
+    <p>You can apply this styling to a separate post. Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
     <p>CSS will be minified before printing.</p>
-    <p>You can grab the first screen css with a script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+    <p>You can grab the first screen css of a page with the script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
     <?php
 
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
