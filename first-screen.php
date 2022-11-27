@@ -65,6 +65,13 @@ add_action( 'wp_enqueue_scripts', function() {
     wp_enqueue_style( 'first-screen' );
     wp_add_inline_style( 'first-screen', get_css_contents_filtered( $csss ) );
 
+    // dequeue styles
+    add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
+        foreach ( get_css_to_dequeue( $csss ) as $v ) {
+            wp_dequeue_style( $v );
+        }
+    }, 10000 );
+
 }, 7 );
 
 // admin post type for css-s
@@ -124,19 +131,27 @@ add_action( 'init', function() {
 // admin meta boxes
 add_action( 'add_meta_boxes', function() {
     add_meta_box(
-        'first-screen-css',
+        'first-screen-css-bulk',
         'Bulk apply the First Screen CSS',
-        'FCP\FirstScreenCSS\fcpfsc_meta_box',
+        'FCP\FirstScreenCSS\fcpfsc_meta_bulk_apply',
         FCPFSC_SLUG,
         'normal',
         'high'
+    );
+    add_meta_box(
+        'first-screen-css-disable',
+        'Disable enqueued styles',
+        'FCP\FirstScreenCSS\fcpfsc_meta_disable_styles',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
     );
 
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
         'first-screen-css',
         'Select First Screen CSS',
-        'FCP\FirstScreenCSS\anypost_meta_box',
+        'FCP\FirstScreenCSS\anypost_meta_select_fsc',
         array_keys( $public_post_types ),
         'side',
         'low'
@@ -151,20 +166,23 @@ add_action( 'admin_footer', function() {
 
     ?>
     <style type="text/css">
-    #first-screen-css select {
+    [id^=first-screen-css] select {
         width:100%;
         box-sizing:border-box;
     }
-    #first-screen-css fieldset label {
+    [id^=first-screen-css] fieldset label {
         display:inline-block;
         min-width:90px;
         margin-right:16px;
         white-space:nowrap;
     }
-    #first-screen-css p {
+    [id^=first-screen-css] input[type=text] {
+        width:100%;
+    }
+    [id^=first-screen-css] p {
         margin:30px 0 10px;
     }
-    #first-screen-css p + p {
+    [id^=first-screen-css] p + p {
         margin-top:10px;
     }
     </style>
@@ -212,7 +230,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives' ];
+        $fields = [ 'post-types', 'post-archives', 'dequeue-style-names' ];
     } else {
         $fields = [ 'id' ];
     }
@@ -338,6 +356,9 @@ function sanitize_meta( $value, $field ) {
         case( 'post-archives' ):
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
         break;
+        case( 'dequeue-style-names' ):
+            return $value;
+        break;
         case( 'id' ):
             if ( !is_numeric( $value ) ) { return ''; }
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
@@ -390,6 +411,18 @@ function select($a) {
     <?php
 }
 
+function input($a) {
+    ?>
+    <input type="text"
+        name="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
+        id="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
+        placeholder="<?php echo isset( $a->placeholder ) ? esc_attr( $a->placeholder )  : '' ?>"
+        value="<?php echo isset( $a->value ) ? esc_attr( $a->value ) : '' ?>"
+        class="<?php echo isset( $a->className ) ? esc_attr( $a->className ) : '' ?>"
+    />
+    <?php
+}
+
 
 function get_css_ids( $key, $type = 'post' ) {
 
@@ -421,6 +454,25 @@ function get_css_contents_filtered( $ids ) { // ++add proper ordering
     ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
 
     return implode( '', $metas );
+}
+
+function get_css_to_dequeue( $ids ) {
+
+    if ( empty( $ids ) ) { return; }
+
+    global $wpdb;
+
+    $metas = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+
+        SELECT `m`.`meta_value`
+        FROM `'.$wpdb->postmeta.'` AS `m`, `'.$wpdb->posts.'` AS `p`
+        WHERE `m`.`meta_key` = %s AND `p`.`post_status` = %s AND `m`.`post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' ) AND `m`.`post_id` = `p`.`ID`
+
+    ', array_merge( [ FCPFSC_PREF.'dequeue-style-names', 'publish' ], $ids ) ) ) );
+
+    $metas = array_values( array_unique( array_filter( array_map( 'trim', explode( ',', implode( ', ', $metas ) ) ) ) ) );
+
+    return $metas;
 }
 
 function get_all_post_types() {
@@ -462,7 +514,7 @@ function css_minify($css) {
 };
 
 // meta boxes
-function fcpfsc_meta_box() {
+function fcpfsc_meta_bulk_apply() {
     global $post;
 
     // get post types to print options
@@ -493,7 +545,20 @@ function fcpfsc_meta_box() {
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
 
-function anypost_meta_box() {
+function fcpfsc_meta_disable_styles() {
+    global $post;
+
+    ?><p><strong>List the names of styles to dequeue, separate by comma</strong></p><?php
+
+    input( (object) [
+        'name' => 'dequeue-style-names',
+        'placeholder' => 'my-theme-style, some-plugin-style',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'dequeue-style-names' )[0],
+    ]);
+
+}
+
+function anypost_meta_select_fsc() {
     global $post;
 
     // get css post types
@@ -518,3 +583,5 @@ function anypost_meta_box() {
 
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
+
+// ++meta boxes with list of all styles
