@@ -146,6 +146,14 @@ add_action( 'add_meta_boxes', function() {
         'normal',
         'low'
     );
+    add_meta_box(
+        'first-screen-css-rest',
+        'The rest of CSS, which is a not-first-screen',
+        'FCP\FirstScreenCSS\fcpfsc_meta_rest_css',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
+    );
 
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
@@ -176,7 +184,8 @@ add_action( 'admin_footer', function() {
         margin-right:16px;
         white-space:nowrap;
     }
-    [id^=first-screen-css] input[type=text] {
+    [id^=first-screen-css] input[type=text],
+    [id^=first-screen-css] textarea {
         width:100%;
     }
     [id^=first-screen-css] p {
@@ -214,7 +223,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $cm_settings['codeEditor'] = wp_enqueue_code_editor( ['type' => 'text/css'] );
     wp_localize_script( 'jquery', 'cm_settings', $cm_settings );
     wp_enqueue_script( 'wp-theme-plugin-editor' );
-    wp_add_inline_script( 'wp-theme-plugin-editor', 'jQuery(document).ready(function($){const $ed=$(\'#content\');$ed.attr(\'placeholder\',\'/* enter your css here */\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}\');wp.codeEditor.initialize($ed,cm_settings);});' );
+    wp_add_inline_script( 'wp-theme-plugin-editor', 'jQuery(document).ready(function($){const $ed=$(\'#content\');$ed.attr(\'placeholder\',\'/* enter your css here */\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}\');wp.codeEditor.initialize($ed,cm_settings);wp.codeEditor.initialize($(\'#fcpfsc-rest-css\'),cm_settings);});' );
     wp_enqueue_style( 'wp-codemirror' );
 });
 
@@ -230,7 +239,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives', 'dequeue-style-names' ];
+        $fields = [ 'post-types', 'post-archives', 'dequeue-style-names', 'rest-css' ];
     } else {
         $fields = [ 'id' ];
     }
@@ -262,49 +271,17 @@ add_filter( 'wp_insert_post_data', function($data) {
     $filtered = wp_unslash( $data['post_content'] );
 
     // track tags
-    // try to escape svgs with url-encoding
-    if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
-        // the idea is taken from https://github.com/yoksel/url-encoder/
-        $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
-            return 'url('.$m[1].'data:image/svg+xml'
-                .preg_replace_callback( '/[\r\n%#\(\)<>\?\[\]\\\\^\`\{\}\|]+/', function($m) {
-                    return urlencode( $m[0] );
-                }, urldecode( $m[2] ) )
-                .$m[1].')';
-        }, $filtered );
-
-        if ( $svg_sanitized === null ) {
-            $errors['tags'] = 'SVG tags must be escaped by urlencode.';
-        } else {
-            $filtered = $svg_sanitized;
-        }
-    }
-    // if tags still exist, forbid that
-    // the idea is taken from WP_Customize_Custom_CSS_Setting::validate as well as the translation
-    if ( str_contains( $filtered, '<' ) && preg_match( '/<\/?\w+/', $filtered ) ) {
-        $errors['tags'] = 'HTML ' . __( 'Markup is not allowed in CSS.' );
-    }
-
-    // ++maybe add parser sometime later
-    // ++safecss_filter_attr($css)??
+    list( $errors, $filtered ) = validate_css( $filtered );
 
     // correct
     if ( empty( $errors ) ) {
-        $data['post_content_filtered'] = css_minify( wp_slash( $filtered ) ); // return slashes, and they will be stripped again right after
+        $data['post_content_filtered'] = css_minify( wp_slash( $filtered ) ); // slashes are stripped again right after
         return $data;
     }
 
     // wrong
     $data['post_content_filtered'] = '';
-
-    update_option( FCPFSC_PREF.'_post_errors', $errors );
-
-    add_filter( 'redirect_post_location', function($location) {
-        $location = remove_query_arg( 'message', $location );
-        $location = add_query_arg( 'css_content', 'wrong', $location );
-        return $location;
-    });
-
+    report_errors( $errors );
     return $data;
 
 }, 10 );
@@ -330,7 +307,7 @@ add_action( 'admin_notices', function () {
     }
 
     if ( empty( $errors ) ) { return; }
-    $errors[] = 'The CSS content can not be applied to selected posts due to errors. Press Publish or Update to see the errors.';
+    $errors[] = 'The CSS content can not be applied to selected posts due to errors. Press Update or Publish to see the errors.';
     ?>
 
     <div class="notice notice-error"><ul>
@@ -359,6 +336,20 @@ function sanitize_meta( $value, $field ) {
         case( 'dequeue-style-names' ):
             return $value;
         break;
+        case( 'rest-css' ):
+            list( $errors, $filtered ) = validate_css( $value );
+
+            // correct
+            if ( empty( $errors ) ) {
+                // ++store to the file
+                return $value;
+            }
+        
+            // wrong
+            // ++delete the file
+            report_errors( $errors );
+            return $value;
+        break;
         case( 'id' ):
             if ( !is_numeric( $value ) ) { return ''; }
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
@@ -369,6 +360,54 @@ function sanitize_meta( $value, $field ) {
     return '';
 }
 
+function validate_css($css) {
+
+    // try to escape svgs with url-encoding
+    if ( str_contains( $css, '<' ) && preg_match( '/<\/?\w+/', $css ) ) {
+        // the idea is taken from https://github.com/yoksel/url-encoder/
+        $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
+            return 'url('.$m[1].'data:image/svg+xml'
+                .preg_replace_callback( '/[\r\n%#\(\)<>\?\[\]\\\\^\`\{\}\|]+/', function($m) {
+                    return urlencode( $m[0] );
+                }, urldecode( $m[2] ) )
+                .$m[1].')';
+        }, $css );
+
+        if ( $svg_sanitized === null ) {
+            $errors['tags'] = 'SVG tags must be escaped by urlencode.';
+        } else {
+            $css = $svg_sanitized;
+        }
+    }
+    // if tags still exist, forbid that
+    // the idea is taken from WP_Customize_Custom_CSS_Setting::validate as well as the translation
+    if ( str_contains( $css, '<' ) && preg_match( '/<\/?\w+/', $css ) ) {
+        $errors['tags'] = 'HTML ' . __( 'Markup is not allowed in CSS.' );
+    }
+
+    // ++maybe add parser sometime later
+    // ++safecss_filter_attr($css)??
+
+    return [ $errors, $css ];
+}
+
+function report_errors($errors) {
+    static $once = false;
+
+    $errors_list = get_option( FCPFSC_PREF.'_post_errors' );
+    if ( is_array( $errors_list ) ) {
+        $errors = array_merge( $errors_list, $errors );
+    }
+    update_option( FCPFSC_PREF.'_post_errors', $errors );
+
+    if ( $once ) { return; } $once = true;
+
+    add_filter( 'redirect_post_location', function($location) {
+        $location = remove_query_arg( 'message', $location );
+        $location = add_query_arg( 'css_content', 'wrong', $location );
+        return $location;
+    });
+}
 
 function checkboxes($a) {
     ?>
@@ -423,6 +462,19 @@ function input($a) {
     <?php
 }
 
+function textarea($a) {
+    ?>
+    <textarea
+        name="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
+        id="<?php echo esc_attr( FCPFSC_PREF . $a->name ) ?>"
+        rows="<?php echo isset( $a->rows ) ? esc_attr( $a->rows ) : '10' ?>" cols="<?php echo isset( $a->cols ) ? esc_attr( $a->cols ) : '50' ?>"
+        placeholder="<?php echo isset( $a->placeholder ) ? esc_attr( $a->placeholder ) : '' ?>"
+        class="<?php echo isset( $a->className ) ? esc_attr( $a->className ) : '' ?>"
+    ><?php
+        echo esc_textarea( isset( $a->value ) ? $a->value : '' )
+    ?></textarea>
+    <?php
+}
 
 function get_css_ids( $key, $type = 'post' ) {
 
@@ -558,6 +610,21 @@ function fcpfsc_meta_disable_styles() {
 
 }
 
+function fcpfsc_meta_rest_css() {
+    global $post;
+
+    textarea( (object) [
+        'name' => 'rest-css',
+        'placeholder' => '/* enter your css here */
+* {
+    border-left: 1px dotted green;
+    box-sizing: border-box;
+}',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0],
+    ]);
+
+}
+
 function anypost_meta_select_fsc() {
     global $post;
 
@@ -584,4 +651,6 @@ function anypost_meta_select_fsc() {
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
 
-// ++meta boxes with list of all styles
+// add validation to css meta
+// check if slashed or unslashed
+// check the WRONG messages
