@@ -59,6 +59,11 @@ add_action( 'wp_enqueue_scripts', function() {
         $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-archives', $post_type ) );
     }
 
+    // exclude css
+    if ( $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ) {
+        $csss = array_values( array_diff( $csss, [ $css_exclude ] ) );
+    }
+
     if ( empty( $csss ) ) { return; }
 
     wp_register_style( 'first-screen', false );
@@ -235,18 +240,18 @@ add_action( 'save_post', function( $postID ) {
     if ( !current_user_can( 'edit_post', $postID ) ) { return; }
 
     $post = get_post( $postID );
-    if ( $post->post_type === 'revision' ) { return; }
+    if ( $post->post_type === 'revision' ) { return; } // update_post_meta fixes the id to the parent, but id can be used before
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
         $fields = [ 'post-types', 'post-archives', 'dequeue-style-names', 'rest-css' ];
     } else {
-        $fields = [ 'id' ];
+        $fields = [ 'id', 'id-exclude' ];
     }
 
     foreach ( $fields as $f ) {
         $f = FCPFSC_PREF . $f;
-        if ( empty( $_POST[ $f ] ) || empty( $new_value = sanitize_meta( $_POST[ $f ], $f ) ) ) {
+        if ( empty( $_POST[ $f ] ) || empty( $new_value = sanitize_meta( $_POST[ $f ], $f, $postID ) ) ) {
             delete_post_meta( $postID, $f );
             continue;
         }
@@ -275,7 +280,7 @@ add_filter( 'wp_insert_post_data', function($data) {
 
     // correct
     if ( empty( $errors ) ) {
-        $data['post_content_filtered'] = css_minify( wp_slash( $filtered ) ); // slashes are stripped again right after
+        $data['post_content_filtered'] = wp_slash( css_minify( $filtered ) ); // slashes are stripped again right after
         return $data;
     }
 
@@ -322,7 +327,7 @@ add_action( 'admin_notices', function () {
 
 // functions -------------------------------------
 
-function sanitize_meta( $value, $field ) {
+function sanitize_meta( $value, $field, $postID ) {
 
     $field = ( strpos( $field, FCPFSC_PREF ) === 0 ) ? substr( $field, strlen( FCPFSC_PREF ) ) : $field;
 
@@ -337,20 +342,25 @@ function sanitize_meta( $value, $field ) {
             return $value;
         break;
         case( 'rest-css' ):
-            list( $errors, $filtered ) = validate_css( $value );
 
+            list( $errors, $filtered ) = validate_css( wp_unslash( $value ) ); //++ move it all to save, as it has to only sanitize
+            $file = __DIR__ . '/css/'.$postID.'.css';
             // correct
             if ( empty( $errors ) ) {
-                // ++store to the file
+                file_put_contents( $file, css_minify( $filtered ) ); //++ add the permission error
                 return $value;
             }
-        
             // wrong
-            // ++delete the file
+            unlink( $file );
             report_errors( $errors );
             return $value;
         break;
         case( 'id' ):
+            if ( !is_numeric( $value ) ) { return ''; }
+            if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
+            return $value;
+        break;
+        case( 'id-exclude' ):
             if ( !is_numeric( $value ) ) { return ''; }
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
             return $value;
@@ -648,9 +658,23 @@ function anypost_meta_select_fsc() {
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0],
     ]);
 
+    ?><p>&nbsp;</p><p><strong>Exclude CSS</strong></p><?php
+    select( (object) [
+        'name' => 'id-exclude',
+        'placeholder' => '------',
+        'options' => $css_posts,
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id-exclude' )[0],
+    ]);
+
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
 
 // add validation to css meta
-// check if slashed or unslashed
 // check the WRONG messages
+// check if all filters and validations work
+// check if integrated tool has the css formatting option
+// check exclusion
+
+// ++!!??add small textarea to every public post along with css like for background in hero
+// ++switch selects to checkboxes or multiples
+//wp-block-library, classic-theme-styles, contact-form-7, toc-screen, kg-style, kg-style-custom, borlabs-cookie, glossary-hint
