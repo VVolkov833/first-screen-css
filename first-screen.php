@@ -333,15 +333,16 @@ add_action( 'admin_notices', function () {
         if ( empty( $post->post_content_filtered ) && !empty( trim( $post->post_content ) ) ) {
             $errors[] = 'The CSS is incorrect. Please check it\'s syntax.';
         }
+        // ++check the meta too
     }
 
     if ( empty( $errors ) ) { return; }
-    $errors[] = 'The CSS content can not be applied to selected posts due to errors. Press Update or Publish to see the errors.';
+    $errors[] = '<strong>This CSS-post can not be applied due to errors. Re-save the post to specify which.</strong>';
     ?>
 
     <div class="notice notice-error"><ul>
     <?php array_walk( $errors, function($a) { ?>
-        <li><?php echo wp_kses( $a, 'strip' ) ?></li>
+        <li><?php echo wp_kses( $a, ['strong' => [], 'em' => []] ) ?></li>
     <?php }) ?>
     </ul></div>
 
