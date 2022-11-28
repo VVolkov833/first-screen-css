@@ -59,25 +59,49 @@ add_action( 'wp_enqueue_scripts', function() {
         $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-archives', $post_type ) );
     }
 
-    // exclude css
+    if ( empty( $csss ) ) { return; }
+
+    // filter by published & post-type
+    $csss = filter_csss( $csss );
+
+    // filter by exclude
     if ( $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ) {
         $csss = array_values( array_diff( $csss, [ $css_exclude ] ) );
     }
 
     if ( empty( $csss ) ) { return; }
 
+    // print styles
     wp_register_style( 'first-screen', false );
     wp_enqueue_style( 'first-screen' );
     wp_add_inline_style( 'first-screen', get_css_contents_filtered( $csss ) );
 
-    // dequeue styles
+    // dequeue existing styles
     add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
         foreach ( get_css_to_dequeue( $csss ) as $v ) {
             wp_dequeue_style( $v );
         }
     }, 10000 );
 
+    // enqueue the rest-screen styles
+    add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
+        foreach ( $csss as $id ) {
+            wp_enqueue_style(
+                'first-screen-css-rest-' . $id,
+                wp_upload_dir()['baseurl'] . '/' . basename( __DIR__ ) . '/style-'.$id.'.css',
+                [],
+                filemtime( wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$id.'.css' ),
+                'all'
+            );
+        }
+    }, 10 );
+
 }, 7 );
+
+register_activation_hook( __FILE__, function() {
+    wp_mkdir_p( wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) );
+    register_uninstall_hook( __FILE__, 'FCP\FirstScreenCSS\delete_the_plugin' );
+} );
 
 // admin post type for css-s
 add_action( 'init', function() {
@@ -344,7 +368,7 @@ function sanitize_meta( $value, $field, $postID ) {
         case( 'rest-css' ):
 
             list( $errors, $filtered ) = validate_css( wp_unslash( $value ) ); //++ move it all to save, as it has to only sanitize
-            $file = __DIR__ . '/css/'.$postID.'.css';
+            $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
             // correct
             if ( empty( $errors ) ) {
                 file_put_contents( $file, css_minify( $filtered ) ); //++ add the permission error
@@ -486,6 +510,23 @@ function textarea($a) {
     <?php
 }
 
+function filter_csss( $ids ) {
+
+    if ( empty( $ids ) ) { return []; }
+
+    global $wpdb;
+
+    $metas = $wpdb->get_col( $wpdb->prepare('
+
+        SELECT `ID`
+        FROM `'.$wpdb->posts.'`
+        WHERE `post_status` = %s AND `post_type` = %s AND `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+
+    ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
+
+    return $metas;
+}
+
 function get_css_ids( $key, $type = 'post' ) {
 
     global $wpdb;
@@ -511,9 +552,9 @@ function get_css_contents_filtered( $ids ) { // ++add proper ordering
 
         SELECT `post_content_filtered`
         FROM `'.$wpdb->posts.'`
-        WHERE `post_status` = %s AND `post_type` = %s AND `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+        WHERE `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
+    ', $ids ) );
 
     return implode( '', $metas );
 }
@@ -526,11 +567,11 @@ function get_css_to_dequeue( $ids ) {
 
     $metas = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
 
-        SELECT `m`.`meta_value`
-        FROM `'.$wpdb->postmeta.'` AS `m`, `'.$wpdb->posts.'` AS `p`
-        WHERE `m`.`meta_key` = %s AND `p`.`post_status` = %s AND `m`.`post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' ) AND `m`.`post_id` = `p`.`ID`
+        SELECT `meta_value`
+        FROM `'.$wpdb->postmeta.'`
+        WHERE `meta_key` = %s AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', array_merge( [ FCPFSC_PREF.'dequeue-style-names', 'publish' ], $ids ) ) ) );
+    ', array_merge( [ FCPFSC_PREF.'dequeue-style-names' ], $ids ) ) ) );
 
     $metas = array_values( array_unique( array_filter( array_map( 'trim', explode( ',', implode( ', ', $metas ) ) ) ) ) );
 
@@ -669,7 +710,13 @@ function anypost_meta_select_fsc() {
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
 
-// add validation to css meta
+function delete_the_plugin() {
+    $dir = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ );
+    array_map( 'unlink', glob( $dir . '/*' ) );
+    rmdir( $dir );
+}
+
+
 // check the WRONG messages
 // check if all filters and validations work
 // check if integrated tool has the css formatting option
@@ -678,3 +725,6 @@ function anypost_meta_select_fsc() {
 // ++!!??add small textarea to every public post along with css like for background in hero
 // ++switch selects to checkboxes or multiples
 //wp-block-library, classic-theme-styles, contact-form-7, toc-screen, kg-style, kg-style-custom, borlabs-cookie, glossary-hint
+// ++maybe limit the id-exclude to the fitting post types, basically, only one - by post type
+// maybe create the /css/ storage on install and make it writable.. or still use the uploads
+// don't show rest meta box if the storing dir is absent or is not writable
