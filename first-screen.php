@@ -76,21 +76,26 @@ add_action( 'wp_enqueue_scripts', function() {
     wp_enqueue_style( 'first-screen' );
     wp_add_inline_style( 'first-screen', get_css_contents_filtered( $csss ) );
 
-    // dequeue existing styles
-    add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
-        foreach ( get_css_to_dequeue( $csss ) as $v ) {
-            wp_dequeue_style( $v );
+    // deregister existing styles
+    $deregister_styles = function() use ( $csss ) {
+        foreach ( get_css_to_deregister( $csss ) as $v ) {
+            wp_deregister_style( $v );
         }
-    }, 10000 );
+    };
+    add_action( 'wp_enqueue_scripts', $deregister_styles, 100000 );
+    add_action( 'wp_footer', $deregister_styles, 1 );
+
 
     // enqueue the rest-screen styles
     add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
         foreach ( $csss as $id ) {
+            $path = '/' . basename( __DIR__ ) . '/style-'.$id.'.css';
+            if ( !is_file( wp_upload_dir()['basedir'] . $path ) ) { continue; }
             wp_enqueue_style(
                 'first-screen-css-rest-' . $id,
-                wp_upload_dir()['baseurl'] . '/' . basename( __DIR__ ) . '/style-'.$id.'.css',
+                wp_upload_dir()['baseurl'] . $path,
                 [],
-                filemtime( wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$id.'.css' ),
+                filemtime( wp_upload_dir()['basedir'] . $path ),
                 'all'
             );
         }
@@ -143,7 +148,7 @@ add_action( 'init', function() {
         'has_archive'         => false,
         'exclude_from_search' => !$shorter['public'],
         'publicly_queryable'  => $shorter['public'],
-        'capabilities'        => [
+        'capabilities'        => [ // only admins
             'edit_post'          => 'switch_themes',
             'read_post'          => 'switch_themes',
             'delete_post'        => 'switch_themes',
@@ -252,7 +257,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $cm_settings['codeEditor'] = wp_enqueue_code_editor( ['type' => 'text/css'] );
     wp_localize_script( 'jquery', 'cm_settings', $cm_settings );
     wp_enqueue_script( 'wp-theme-plugin-editor' );
-    wp_add_inline_script( 'wp-theme-plugin-editor', 'jQuery(document).ready(function($){const $ed=$(\'#content\');$ed.attr(\'placeholder\',\'/* enter your css here */\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}\');wp.codeEditor.initialize($ed,cm_settings);wp.codeEditor.initialize($(\'#fcpfsc-rest-css\'),cm_settings);});' );
+    wp_add_inline_script( 'wp-theme-plugin-editor', file_get_contents( __DIR__ . '/assets/codemirror-init.js') );
     wp_enqueue_style( 'wp-codemirror' );
 });
 
@@ -268,7 +273,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives', 'dequeue-style-names', 'rest-css' ];
+        $fields = [ 'post-types', 'post-archives', 'deregister-style-names', 'rest-css' ];
     } else {
         $fields = [ 'id', 'id-exclude' ];
     }
@@ -284,9 +289,10 @@ add_action( 'save_post', function( $postID ) {
 });
 
 // filter css
-add_filter( 'wp_insert_post_data', function($data) {
+add_filter( 'wp_insert_post_data', function($data, $postarr) {
 
     if ( $data['post_type'] !== FCPFSC_SLUG ) { return $data; }
+    clear_errors( $postarr['ID'] );
 
     // empty is not an error
     if ( trim( $data['post_content'] ) === '' ) {
@@ -294,15 +300,11 @@ add_filter( 'wp_insert_post_data', function($data) {
         return $data;
     }
 
-    // process errors
     $errors = [];
 
-    $filtered = wp_unslash( $data['post_content'] );
+    list( $errors, $filtered ) = sanitize_css( wp_unslash( $data['post_content'] ) );
 
-    // track tags
-    list( $errors, $filtered ) = validate_css( $filtered );
-
-    // correct
+    // right
     if ( empty( $errors ) ) {
         $data['post_content_filtered'] = wp_slash( css_minify( $filtered ) ); // slashes are stripped again right after
         return $data;
@@ -310,41 +312,31 @@ add_filter( 'wp_insert_post_data', function($data) {
 
     // wrong
     $data['post_content_filtered'] = '';
-    report_errors( $errors );
+    save_errors( $errors, $postarr['ID'], '#postdivrich' ); // ++set to draft
     return $data;
 
-}, 10 );
+}, 10, 2 );
 
 // message on errors in css
 add_action( 'admin_notices', function () {
 
     $screen = get_current_screen();
-    if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG || $screen->base !== 'post' || $screen->action === 'add' ) { return; }
+    if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG || $screen->base !== 'post' ) { return; }
 
-    $errors = [];
+    global $post;
+    if ( empty( $errors = get_post_meta( $post->ID, FCPFSC_PREF.'_post_errors' )[0] ) ) { return; }
 
-    if ( isset( $_GET['css_content'] ) && $_GET['css_content'] === 'wrong' ) {
-        $errors = get_option( FCPFSC_PREF.'_post_errors' );
-        delete_option( FCPFSC_PREF.'_post_errors' );
-    }
-
-    if ( empty( $errors ) ) {
-        global $post;
-        if ( empty( $post->post_content_filtered ) && !empty( trim( $post->post_content ) ) ) {
-            $errors[] = 'The CSS is incorrect. Please check it\'s syntax.';
-        }
-        // ++check the meta too
-    }
-
-    if ( empty( $errors ) ) { return; }
-    $errors[] = '<strong>This CSS-post can not be applied due to errors. Re-save the post to specify which.</strong>';
+    array_unshift( $errors['errors'], '<strong>This CSS-post can not be published due to the following errors:</strong>' );
     ?>
 
     <div class="notice notice-error"><ul>
-    <?php array_walk( $errors, function($a) { ?>
+    <?php array_walk( $errors['errors'], function($a) {
+        ?>
         <li><?php echo wp_kses( $a, ['strong' => [], 'em' => []] ) ?></li>
     <?php }) ?>
     </ul></div>
+
+    <style type="text/css"><?php echo implode( ', ', $errors['selectors']) ?>{box-shadow:-3px 0px 0px 0px #d63638}</style>
 
     <?php
 });
@@ -363,12 +355,12 @@ function sanitize_meta( $value, $field, $postID ) {
         case( 'post-archives' ):
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
         break;
-        case( 'dequeue-style-names' ):
+        case( 'deregister-style-names' ):
             return $value;
         break;
         case( 'rest-css' ):
 
-            list( $errors, $filtered ) = validate_css( wp_unslash( $value ) ); //++ move it all to save, as it has to only sanitize
+            list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to save, as it has to only sanitize
             $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
             // correct
             if ( empty( $errors ) ) {
@@ -377,7 +369,7 @@ function sanitize_meta( $value, $field, $postID ) {
             }
             // wrong
             unlink( $file );
-            report_errors( $errors );
+            save_errors( $errors, $postID, '#first-screen-css-rest > .inside' );
             return $value;
         break;
         case( 'id' ):
@@ -395,9 +387,9 @@ function sanitize_meta( $value, $field, $postID ) {
     return '';
 }
 
-function validate_css($css) {
+function sanitize_css($css) {
 
-    // try to escape svgs with url-encoding
+    // try to escape tags inside svg with url-encoding
     if ( str_contains( $css, '<' ) && preg_match( '/<\/?\w+/', $css ) ) {
         // the idea is taken from https://github.com/yoksel/url-encoder/
         $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
@@ -408,9 +400,7 @@ function validate_css($css) {
                 .$m[1].')';
         }, $css );
 
-        if ( $svg_sanitized === null ) {
-            $errors['tags'] = 'SVG tags must be escaped by urlencode.';
-        } else {
+        if ( $svg_sanitized !== null ) {
             $css = $svg_sanitized;
         }
     }
@@ -420,28 +410,24 @@ function validate_css($css) {
         $errors['tags'] = 'HTML ' . __( 'Markup is not allowed in CSS.' );
     }
 
+    // ++strip <?php, <!--??
     // ++maybe add parser sometime later
     // ++safecss_filter_attr($css)??
 
-    return [ $errors, $css ];
+    return [$errors, $css];
 }
 
-function report_errors($errors) {
-    static $once = false;
+function save_errors($errors, $postID, $selector = '') {
+    static $errors_list = [ 'errors' => [], 'selectors' => [] ];    
 
-    $errors_list = get_option( FCPFSC_PREF.'_post_errors' );
-    if ( is_array( $errors_list ) ) {
-        $errors = array_merge( $errors_list, $errors );
-    }
-    update_option( FCPFSC_PREF.'_post_errors', $errors );
+    $errors = (array) $errors;
 
-    if ( $once ) { return; } $once = true;
-
-    add_filter( 'redirect_post_location', function($location) {
-        $location = remove_query_arg( 'message', $location );
-        $location = add_query_arg( 'css_content', 'wrong', $location );
-        return $location;
-    });
+    $errors_list['errors'] = array_merge( $errors_list['errors'], $errors );
+    $errors_list['selectors'][] = $selector; // errors override by key, but selectors collect
+    update_post_meta( $postID, FCPFSC_PREF.'_post_errors', $errors_list );
+}
+function clear_errors($postID) {
+    delete_post_meta( $postID, FCPFSC_PREF.'_post_errors' );
 }
 
 function checkboxes($a) {
@@ -560,9 +546,9 @@ function get_css_contents_filtered( $ids ) { // ++add proper ordering
     return implode( '', $metas );
 }
 
-function get_css_to_dequeue( $ids ) {
+function get_css_to_deregister( $ids ) {
 
-    if ( empty( $ids ) ) { return; }
+    if ( empty( $ids ) ) { return []; }
 
     global $wpdb;
 
@@ -572,7 +558,7 @@ function get_css_to_dequeue( $ids ) {
         FROM `'.$wpdb->postmeta.'`
         WHERE `meta_key` = %s AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', array_merge( [ FCPFSC_PREF.'dequeue-style-names' ], $ids ) ) ) );
+    ', array_merge( [ FCPFSC_PREF.'deregister-style-names' ], $ids ) ) ) );
 
     $metas = array_values( array_unique( array_filter( array_map( 'trim', explode( ',', implode( ', ', $metas ) ) ) ) ) );
 
@@ -652,12 +638,12 @@ function fcpfsc_meta_bulk_apply() {
 function fcpfsc_meta_disable_styles() {
     global $post;
 
-    ?><p><strong>List the names of styles to dequeue, separate by comma</strong></p><?php
+    ?><p><strong>List the names of styles to deregister, separate by comma</strong></p><?php
 
     input( (object) [
-        'name' => 'dequeue-style-names',
+        'name' => 'deregister-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'dequeue-style-names' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0],
     ]);
 
 }
@@ -717,15 +703,11 @@ function delete_the_plugin() {
     rmdir( $dir );
 }
 
-
-// check the WRONG messages
 // check if all filters and validations work
-// check if integrated tool has the css formatting option
-// check exclusion
+// check exclusion and all
 
 // ++!!??add small textarea to every public post along with css like for background in hero
 // ++switch selects to checkboxes or multiples
-//wp-block-library, classic-theme-styles, contact-form-7, toc-screen, kg-style, kg-style-custom, borlabs-cookie, glossary-hint
 // ++maybe limit the id-exclude to the fitting post types, basically, only one - by post type
-// maybe create the /css/ storage on install and make it writable.. or still use the uploads
-// don't show rest meta box if the storing dir is absent or is not writable
+// ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
+// ++add formatting button like https://codemirror.net/2/demo/formatting.html
