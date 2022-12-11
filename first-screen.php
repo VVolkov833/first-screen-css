@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.1.0
+Version: 1.2.0
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.0.0
@@ -75,6 +75,7 @@ add_action( 'wp_enqueue_scripts', function() {
     wp_register_style( 'first-screen', false );
     wp_enqueue_style( 'first-screen' );
     wp_add_inline_style( 'first-screen', get_css_contents_filtered( $csss ) );
+
 
     // deregister existing styles
     $deregister_styles = function() use ( $csss ) {
@@ -162,7 +163,7 @@ add_action( 'init', function() {
     register_post_type( FCPFSC_SLUG, $args );
 });
 
-// admin meta boxes
+// admin controls
 add_action( 'add_meta_boxes', function() {
     add_meta_box(
         'first-screen-css-bulk',
@@ -204,7 +205,7 @@ add_action( 'add_meta_boxes', function() {
 add_action( 'admin_footer', function() {
 
     $screen = get_current_screen();
-    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; }
+    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; } // ++to inline css & include
 
     ?>
     <style type="text/css">
@@ -312,7 +313,7 @@ add_filter( 'wp_insert_post_data', function($data, $postarr) {
 
     // wrong
     $data['post_content_filtered'] = '';
-    save_errors( $errors, $postarr['ID'], '#postdivrich' ); // ++set to draft
+    save_errors( $errors, $postarr['ID'], '#postdivrich' ); // ++set to draft on any error?
     return $data;
 
 }, 10, 2 );
@@ -356,11 +357,11 @@ function sanitize_meta( $value, $field, $postID ) {
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
         break;
         case( 'deregister-style-names' ):
-            return $value;
+            return $value; // ++preg_replace not letters ,space-_, lowercase?, 
         break;
         case( 'rest-css' ):
 
-            list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to save, as it has to only sanitize
+            list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to a separate filter / actions, organize better with errors?
             $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
             // correct
             if ( empty( $errors ) ) {
@@ -373,7 +374,7 @@ function sanitize_meta( $value, $field, $postID ) {
             return $value;
         break;
         case( 'id' ):
-            if ( !is_numeric( $value ) ) { return ''; }
+            if ( !is_numeric( $value ) ) { return ''; } // ++to a function
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
             return $value;
         break;
@@ -423,7 +424,7 @@ function save_errors($errors, $postID, $selector = '') {
     $errors = (array) $errors;
 
     $errors_list['errors'] = array_merge( $errors_list['errors'], $errors );
-    $errors_list['selectors'][] = $selector; // errors override by key, but selectors collect
+    $errors_list['selectors'][] = $selector; // errors override by associative key, numeric add, but selectors only add for now
     update_post_meta( $postID, FCPFSC_PREF.'_post_errors', $errors_list );
 }
 function clear_errors($postID) {
@@ -703,11 +704,12 @@ function delete_the_plugin() {
     rmdir( $dir );
 }
 
-// check if all filters and validations work
-// check exclusion and all
+// new version set
+// svn upload
 
-// ++!!??add small textarea to every public post along with css like for background in hero
-// ++switch selects to checkboxes or multiples
-// ++maybe limit the id-exclude to the fitting post types, basically, only one - by post type
-// ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++add formatting button like https://codemirror.net/2/demo/formatting.html
+// ++switch selects to checkboxes or multiples
+// ++maybe limit the id-exclude to the fitting post types
+// ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
+// ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
+// ++!!??add small textarea to every public post along with css like for a unique background-image in hero

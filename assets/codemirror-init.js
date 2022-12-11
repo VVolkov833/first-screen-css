@@ -8,6 +8,4 @@ jQuery( document ).ready( $ => {
     );
     wp.codeEditor.initialize( $ed, cm_settings );
     wp.codeEditor.initialize( $( '#fcpfsc-rest-css' ), cm_settings );
-
-    console.log( wp.codeEditor.commands );
 });
