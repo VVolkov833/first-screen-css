@@ -2,8 +2,8 @@
 Contributors: Firmcatalyst
 Tags: inline, css, firstscreen, style, web vitals, cls, fcp
 Requires at least: 5.8
-Tested up to: 6.0
-Requires PHP: 8.0.0
+Tested up to: 6.1
+Requires PHP: 7.4
 Stable tag: 1.2
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
