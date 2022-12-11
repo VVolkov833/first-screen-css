@@ -4,7 +4,7 @@ Tags: inline, css, firstscreen, style, web vitals, cls, fcp
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.0.0
-Stable tag: 1.1
+Stable tag: 1.2
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
@@ -22,6 +22,8 @@ Insert inline CSS to the head of the website, so the first screen renders with n
 * Apply to all posts of a particular public post-type
 * Apply to the blog or any archive page of a post-type with archive support
 * It minifies the css before printing
+* Deregister enqueued styles by name
+* Apply non-first-screen css separately
 
 = Usage =
 
@@ -45,6 +47,12 @@ You can modify the code for your needs, or suggest improvemens on [GitHub](https
 Waiting for your questions, which you can ask [here](https://firmcatalyst.com/contact/) or via GitHub.
 
 == Upgrade Notice ==
+
+= 1.2 =
+
+* Added the option to deregister enqueued styles by name
+* Added the field for non-first-screen css
+* Added the exceptions option to the public post types
 
 = 1.1 =
 

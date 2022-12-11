@@ -1,3 +1,9 @@
+= 1.2 =
+
+* Added the option to deregister enqueued styles by name
+* Added the field for non-first-screen css
+* Added the exceptions option to the public post types
+
 = 1.1 =
 
 * Excluded Front Page from the bulk options, as it stands out in most cases

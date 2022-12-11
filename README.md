@@ -8,6 +8,8 @@ Insert inline CSS to the head of the website, so the first screen renders with n
 * Apply to all posts of a particular public post-type
 * Apply to the blog or the archive page of a post-type with archive support
 * It minifies the css before printing
+* Deregister enqueued styles by name
+* Apply non-first-screen css separately
 
 ## Usage
 
