@@ -713,3 +713,5 @@ function delete_the_plugin() {
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
 // ++!!??add small textarea to every public post along with css like for a unique background-image in hero
+// ++limit meta boxes to admins too!!!
+// ++load in footer - the last argument in enqueue script
