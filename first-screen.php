@@ -85,6 +85,7 @@ add_action( 'wp_enqueue_scripts', function() {
     };
     add_action( 'wp_enqueue_scripts', $deregister_styles, 100000 );
     add_action( 'wp_footer', $deregister_styles, 1 );
+    add_action( 'wp_footer', $deregister_styles, 11 );
 
 
     // enqueue the rest-screen styles
