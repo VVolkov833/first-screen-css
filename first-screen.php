@@ -105,6 +105,21 @@ add_action( 'wp_enqueue_scripts', function() {
                 'all'
             );
         }
+
+        // defer loading
+        $defer_csss = get_to_defer( $csss );
+        foreach ( $defer_csss as $id ) {
+            add_filter( 'style_loader_tag', function ($tag, $handle) use ($id) {
+                if ( $handle !== 'first-screen-css-rest-' . $id ) { return $tag; }
+                return
+                    str_replace( [ 'rel="stylesheet"', "rel='stylesheet'" ], [
+                        'rel="preload" as="style" onload="this.onload=null;this.rel=\'stylesheet\'"',
+                        "rel='preload' as='style' onload='this.onload=null;this.rel=\"stylesheet\"'"
+                    ], $tag ).
+                    '<noscript>'.substr( $tag, 0, -1 ).'</noscript>' . "\n"
+                ;
+            }, 10, 2);
+        }
     }, 10 );
 
 }, 7 );
@@ -538,9 +553,9 @@ function filter_csss( $ids ) {
 
         SELECT `post_id`
         FROM `'.$wpdb->postmeta.'`
-        WHERE `meta_key` = %s AND `meta_value` = %s
+        WHERE `meta_key` = %s AND `meta_value` = %s AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', FCPFSC_PREF.'development-mode', serialize(['on']) ) ) );
+    ', array_merge( [ FCPFSC_PREF.'development-mode', serialize(['on']) ], $ids ) ) ) );
 
 
     return array_values( array_diff( $filtered_ids, $dev_mode ) );
@@ -559,6 +574,22 @@ function get_css_ids( $key, $type = 'post' ) {
     ', $key, $wpdb->add_placeholder_escape( '%"'.$type.'"%' ) ) ) );
 
     return $ids;
+}
+
+function get_to_defer( $ids ) {
+
+    global $wpdb;
+
+    $defer_ids = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+
+        SELECT `post_id`
+        FROM `'.$wpdb->postmeta.'`
+        WHERE `meta_key` = %s AND `meta_value` = %s AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+
+    ', array_merge( [ FCPFSC_PREF.'rest-css-defer', serialize(['on']) ], $ids ) ) ) );
+
+
+    return $defer_ids;
 }
 
 function get_css_contents_filtered( $ids ) { // ++add proper ordering
