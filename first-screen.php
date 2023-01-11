@@ -79,8 +79,12 @@ add_action( 'wp_enqueue_scripts', function() {
 
     // deregister existing styles
     $deregister_styles = function() use ( $csss ) {
-        foreach ( get_css_to_deregister( $csss ) as $v ) {
+        list( $styles, $scripts ) = get_to_deregister( $csss );
+        foreach ( $styles as $v ) {
             wp_deregister_style( $v );
+        }
+        foreach ( $scripts as $v ) {
+            wp_deregister_script( $v );
         }
     };
     add_action( 'wp_enqueue_scripts', $deregister_styles, 100000 );
@@ -574,23 +578,31 @@ function get_css_contents_filtered( $ids ) { // ++add proper ordering
     return implode( '', $metas );
 }
 
-function get_css_to_deregister( $ids ) {
+function get_to_deregister( $ids ) {
 
     if ( empty( $ids ) ) { return []; }
 
     global $wpdb;
 
-    $metas = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+    $wpdb->query( $wpdb->remove_placeholder_escape( $wpdb->prepare('
 
-        SELECT `meta_value`
+        SELECT
+            IF ( STRCMP( `meta_key`, %s ) = 0, `meta_value`, "" ) AS "styles",
+            IF ( STRCMP( `meta_key`, %s ) = 0, `meta_value`, "" ) AS "scripts"
         FROM `'.$wpdb->postmeta.'`
-        WHERE `meta_key` = %s AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
+        WHERE ( `meta_key` = %s OR `meta_key` = %s ) AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', array_merge( [ FCPFSC_PREF.'deregister-style-names' ], $ids ) ) ) );
+    ', array_merge(
+        [ FCPFSC_PREF.'deregister-style-names', FCPFSC_PREF.'deregister-script-names', FCPFSC_PREF.'deregister-style-names', FCPFSC_PREF.'deregister-script-names' ],
+        $ids
+    ) ) ) );
 
-    $metas = array_values( array_unique( array_filter( array_map( 'trim', explode( ',', implode( ', ', $metas ) ) ) ) ) );
+    $clear = function($a) { return array_values( array_unique( array_filter( array_map( 'trim', explode( ',', implode( ', ', $a ) ) ) ) ) ); };
+    
+    $styles = $clear( $wpdb->get_col( null, 0 ) );
+    $scripts = $clear( $wpdb->get_col( null, 1 ) );
 
-    return $metas;
+    return [ $styles, $scripts ];
 }
 
 function get_all_post_types() {
