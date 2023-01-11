@@ -46,7 +46,7 @@ add_action( 'wp_enqueue_scripts', function() {
         }
         unset( $css_id );
         // get css by post-type
-        if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they are mostly stand out
+        if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they stand out, mostly
             $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-types', $post_type ) );
         }
     }
@@ -61,7 +61,7 @@ add_action( 'wp_enqueue_scripts', function() {
 
     if ( empty( $csss ) ) { return; }
 
-    // filter by published & post-type
+    // filter by post_status, post_type, development-mode
     $csss = filter_csss( $csss );
 
     // filter by exclude
@@ -168,7 +168,7 @@ add_action( 'init', function() {
 add_action( 'add_meta_boxes', function() {
     add_meta_box(
         'first-screen-css-bulk',
-        'Bulk apply the First Screen CSS',
+        'Bulk apply',
         'FCP\FirstScreenCSS\fcpfsc_meta_bulk_apply',
         FCPFSC_SLUG,
         'normal',
@@ -176,7 +176,7 @@ add_action( 'add_meta_boxes', function() {
     );
     add_meta_box(
         'first-screen-css-disable',
-        'Disable enqueued styles',
+        'Disable enqueued',
         'FCP\FirstScreenCSS\fcpfsc_meta_disable_styles',
         FCPFSC_SLUG,
         'normal',
@@ -275,7 +275,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives', 'deregister-style-names', 'rest-css' ];
+        $fields = [ 'post-types', 'post-archives', 'development-mode', 'deregister-style-names', 'deregister-script-names', 'rest-css', 'rest-css-defer' ];
     } else {
         $fields = [ 'id', 'id-exclude' ];
     }
@@ -350,17 +350,27 @@ function sanitize_meta( $value, $field, $postID ) {
 
     $field = ( strpos( $field, FCPFSC_PREF ) === 0 ) ? substr( $field, strlen( FCPFSC_PREF ) ) : $field;
 
+    $onoff = function($value) {
+        return $value[0] === 'on' ? ['on'] : [];
+    };
+
     switch( $field ) {
-        case( 'post-types' ):
+        case ( 'post-types' ):
             return array_intersect( $value, array_keys( get_all_post_types()['public'] ) );
         break;
-        case( 'post-archives' ):
+        case ( 'post-archives' ):
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
         break;
-        case( 'deregister-style-names' ):
+        case ( 'development-mode' ):
+            return $onoff( $value );
+        break;
+        case ( 'deregister-style-names' ):
             return $value; // ++preg_replace not letters ,space-_, lowercase?, 
         break;
-        case( 'rest-css' ):
+        case ( 'deregister-script-names' ):
+            return $value; // ++preg_replace not letters ,space-_, lowercase?, 
+        break;
+        case ( 'rest-css' ):
 
             list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to a separate filter / actions, organize better with errors?
             $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
@@ -374,12 +384,15 @@ function sanitize_meta( $value, $field, $postID ) {
             save_errors( $errors, $postID, '#first-screen-css-rest > .inside' );
             return $value;
         break;
-        case( 'id' ):
+        case ( 'rest-css-defer' ):
+            return $onoff( $value );
+        break;
+        case ( 'id' ):
             if ( !is_numeric( $value ) ) { return ''; } // ++to a function
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
             return $value;
         break;
-        case( 'id-exclude' ):
+        case ( 'id-exclude' ):
             if ( !is_numeric( $value ) ) { return ''; }
             if ( !( $post = get_post( $value ) ) || $post->post_type !== FCPFSC_SLUG ) { return ''; }
             return $value;
@@ -505,7 +518,8 @@ function filter_csss( $ids ) {
 
     global $wpdb;
 
-    $metas = $wpdb->get_col( $wpdb->prepare('
+    // filter by post_status & post_type
+    $filtered_ids = $wpdb->get_col( $wpdb->prepare('
 
         SELECT `ID`
         FROM `'.$wpdb->posts.'`
@@ -513,14 +527,26 @@ function filter_csss( $ids ) {
 
     ', array_merge( [ 'publish', FCPFSC_SLUG ], $ids ) ) );
 
-    return $metas;
+    // filter by development mode
+    if ( current_user_can( 'administrator' ) ) { return $filtered_ids; }
+
+    $dev_mode = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+
+        SELECT `post_id`
+        FROM `'.$wpdb->postmeta.'`
+        WHERE `meta_key` = %s AND `meta_value` = %s
+
+    ', FCPFSC_PREF.'development-mode', serialize(['on']) ) ) );
+
+
+    return array_values( array_diff( $filtered_ids, $dev_mode ) );
 }
 
 function get_css_ids( $key, $type = 'post' ) {
 
     global $wpdb;
 
-    $metas = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+    $ids = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
 
         SELECT `post_id`
         FROM `'.$wpdb->postmeta.'`
@@ -528,7 +554,7 @@ function get_css_ids( $key, $type = 'post' ) {
 
     ', $key, $wpdb->add_placeholder_escape( '%"'.$type.'"%' ) ) ) );
 
-    return $metas;
+    return $ids;
 }
 
 function get_css_contents_filtered( $ids ) { // ++add proper ordering
@@ -629,10 +655,15 @@ function fcpfsc_meta_bulk_apply() {
     ]);
 
     ?>
-    <p>You can apply this styling to a separate post. Every public post type now has a special select box in the right sidebar to pick from the list of the first-screen-css posts, like this one.</p>
-    <p>CSS will be minified before printing.</p>
+    <p>You can apply this styling to a separate post. Every public post type has a special select box in the right sidebar to pick this or any other first-screen-css.</p>
     <p>You can grab the first screen css of a page with the script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
     <?php
+
+    checkboxes( (object) [
+        'name' => 'development-mode',
+        'options' => ['on' => 'Development mode (apply only if the post is visited as the admin)'],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0],
+    ]);
 
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
 }
@@ -640,12 +671,20 @@ function fcpfsc_meta_bulk_apply() {
 function fcpfsc_meta_disable_styles() {
     global $post;
 
-    ?><p><strong>List the names of styles to deregister, separate by comma</strong></p><?php
+    ?><p><strong>List the names of STYLES to deregister, separate by comma</strong></p><?php
 
     input( (object) [
         'name' => 'deregister-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0],
+    ]);
+
+    ?><p><strong>List the names of SCRIPTS to deregister, separate by comma</strong></p><?php
+
+    input( (object) [
+        'name' => 'deregister-script-names',
+        'placeholder' => 'my-theme-script, some-plugin-script',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-script-names' )[0],
     ]);
 
 }
@@ -663,6 +702,11 @@ function fcpfsc_meta_rest_css() {
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0],
     ]);
 
+    checkboxes( (object) [
+        'name' => 'rest-css-defer',
+        'options' => ['on' => 'Defer the not-first-screen CSS (avoid render-blicking)'],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css-defer' )[0],
+    ]);
 }
 
 function anypost_meta_select_fsc() {
