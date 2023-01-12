@@ -108,18 +108,22 @@ add_action( 'wp_enqueue_scripts', function() {
 
         // defer loading
         $defer_csss = get_to_defer( $csss );
-        foreach ( $defer_csss as $id ) {
-            add_filter( 'style_loader_tag', function ($tag, $handle) use ($id) {
-                if ( $handle !== 'first-screen-css-rest-' . $id ) { return $tag; }
-                return
-                    str_replace( [ 'rel="stylesheet"', "rel='stylesheet'" ], [
-                        'rel="preload" as="style" onload="this.onload=null;this.rel=\'stylesheet\'"',
-                        "rel='preload' as='style' onload='this.onload=null;this.rel=\"stylesheet\"'"
-                    ], $tag ).
-                    '<noscript>'.substr( $tag, 0, -1 ).'</noscript>' . "\n"
-                ;
-            }, 10, 2);
-        }
+        add_filter( 'style_loader_tag', function ($tag, $handle) use ($defer_csss) {
+            if ( strpos( $handle, 'first-screen-css-rest-' ) === false || !in_array( str_replace( 'first-screen-css-rest-', '', $handle ), $defer_csss ) ) {
+                return $tag;
+            }
+            return
+                str_replace( [ 'rel="stylesheet"', "rel='stylesheet'" ], [
+                    'rel="preload" as="style" onload="this.onload=null;this.rel=\'stylesheet\'"',
+                    "rel='preload' as='style' onload='this.onload=null;this.rel=\"stylesheet\"'"
+                ], $tag ).
+                '<noscript>'.str_replace( // remove doubling id
+                    [ ' id="'.$handle.'-css"', " id='".$handle."-css'" ],
+                    [ '', '' ],
+                    substr( $tag, 0, -1 )
+                ).'</noscript>' . "\n"
+            ;
+        }, 10, 2);
     }, 10 );
 
 }, 7 );
@@ -795,11 +799,11 @@ function delete_the_plugin() {
 // new version set
 // svn upload
 
+// ++limit meta boxes to admins too!!!
 // ++add formatting button like https://codemirror.net/2/demo/formatting.html
+// ++add the bigger height button and save it
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
 // ++!!??add small textarea to every public post along with css like for a unique background-image in hero
-// ++limit meta boxes to admins too!!!
-// ++load in footer - the last argument in enqueue script
