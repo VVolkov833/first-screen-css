@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.2.1
+Version: 1.3.0
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
@@ -214,6 +214,7 @@ add_action( 'add_meta_boxes', function() {
         'low'
     );
 
+    if ( !current_user_can( 'administrator' ) ) { return; }
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
         'first-screen-css',
@@ -291,7 +292,8 @@ add_action( 'save_post', function( $postID ) {
 
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
     if ( !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
-    if ( !current_user_can( 'edit_post', $postID ) ) { return; }
+    //if ( !current_user_can( 'edit_post', $postID ) ) { return; }
+    if ( !current_user_can( 'administrator' ) ) { return; }
 
     $post = get_post( $postID );
     if ( $post->post_type === 'revision' ) { return; } // update_post_meta fixes the id to the parent, but id can be used before
@@ -807,3 +809,4 @@ function delete_the_plugin() {
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
 // ++!!??add small textarea to every public post along with css like for a unique background-image in hero
+// ++list of styles to defer like with deregister

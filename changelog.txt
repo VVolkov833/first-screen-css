@@ -1,3 +1,9 @@
+= 1.3 =
+
+* Added the development mode, visible only to admins
+* Added the option to deregister existing styles and scripts
+* Added the option to defer the not-first-screen CSS loading
+
 = 1.2 =
 
 * Added the option to deregister enqueued styles by name
