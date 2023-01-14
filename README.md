@@ -12,6 +12,10 @@ Insert the inline CSS to the head of the website, disable existing styles and sc
 * Apply not-first-screen CSS separately
 * Defer the not-first-screen CSS loading
 
+## Demo
+
+[firmcatalyst.com/first-screen-css](https://firmcatalyst.com/first-screen-css/)
+
 ## Usage
 
 * Install and activate the plugin
