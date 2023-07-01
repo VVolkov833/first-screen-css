@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.3.0
+Version: 1.4.0
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
@@ -15,7 +15,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
-define( 'FCPFSC_DEV', true );
+define( 'FCPFSC_DEV', false );
 define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
@@ -192,6 +192,8 @@ add_action( 'init', function() {
 
 // admin controls
 add_action( 'add_meta_boxes', function() {
+    if ( !current_user_can( 'administrator' ) ) { return; }
+
     add_meta_box(
         'first-screen-css-bulk',
         'Bulk apply',
@@ -217,7 +219,6 @@ add_action( 'add_meta_boxes', function() {
         'low'
     );
 
-    if ( !current_user_can( 'administrator' ) ) { return; }
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
         'first-screen-css',
@@ -233,7 +234,7 @@ add_action( 'add_meta_boxes', function() {
 add_action( 'admin_footer', function() {
 
     $screen = get_current_screen();
-    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; } // ++to inline css & include
+    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; } // ++to inline css & include ++if can admin
 
     ?>
     <style type="text/css">
@@ -326,7 +327,7 @@ add_action( 'save_post', function( $postID ) {
 
 // filter css
 add_filter( 'wp_insert_post_data', function($data, $postarr) {
-
+    // ++ if can admin?
     if ( $data['post_type'] !== FCPFSC_SLUG ) { return $data; }
     clear_errors( $postarr['ID'] );
 
@@ -360,7 +361,7 @@ add_action( 'admin_notices', function () {
     if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG || $screen->base !== 'post' ) { return; }
 
     global $post;
-    if ( empty( $errors = get_post_meta( $post->ID, FCPFSC_PREF.'_post_errors' )[0] ) ) { return; }
+    if ( empty( $errors = get_post_meta( $post->ID, FCPFSC_PREF.'_post_errors' )[0] ?? '' ) ) { return; }
 
     array_unshift( $errors['errors'], '<strong>This CSS-post can not be published due to the following errors:</strong>' );
     ?>
@@ -437,6 +438,8 @@ function sanitize_meta( $value, $field, $postID ) {
 }
 
 function sanitize_css($css) {
+
+    $errors = [];
 
     // try to escape tags inside svg with url-encoding
     if ( strpos( $css, '<' ) !== false && preg_match( '/<\/?\w+/', $css ) ) {
@@ -704,7 +707,7 @@ function fcpfsc_meta_bulk_apply() {
     checkboxes( (object) [
         'name' => 'post-types',
         'options' => $public_post_types,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-types' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-types' )[0] ?? '',
     ]);
 
     ?><p><strong>Apply to the Archive pages of the following post types</strong></p><?php
@@ -712,7 +715,7 @@ function fcpfsc_meta_bulk_apply() {
     checkboxes( (object) [
         'name' => 'post-archives',
         'options' => $archives_post_types,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-archives' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-archives' )[0] ?? '',
     ]);
 
     ?>
@@ -723,7 +726,7 @@ function fcpfsc_meta_bulk_apply() {
     checkboxes( (object) [
         'name' => 'development-mode',
         'options' => ['on' => 'Development mode (apply only if the post is visited as the admin)'],
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0] ?? '',
     ]);
 
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
@@ -737,7 +740,7 @@ function fcpfsc_meta_disable_styles() {
     input( (object) [
         'name' => 'deregister-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0] ?? '',
     ]);
 
     ?><p><strong>List the names of SCRIPTS to deregister, separate by comma</strong></p><?php
@@ -745,7 +748,7 @@ function fcpfsc_meta_disable_styles() {
     input( (object) [
         'name' => 'deregister-script-names',
         'placeholder' => 'my-theme-script, some-plugin-script',
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-script-names' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-script-names' )[0] ?? '',
     ]);
 
 }
@@ -755,13 +758,13 @@ function fcpfsc_meta_rest_css() {
 
     textarea( (object) [
         'name' => 'rest-css',
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0] ?? '',
     ]);
 
     checkboxes( (object) [
         'name' => 'rest-css-defer',
         'options' => ['on' => 'Defer the not-first-screen CSS (avoid render-blicking)'],
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css-defer' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css-defer' )[0] ?? '',
     ]);
 }
 
@@ -785,7 +788,7 @@ function anypost_meta_select_fsc() {
         'name' => 'id',
         'placeholder' => '------',
         'options' => $css_posts,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id' )[0] ?? '',
     ]);
 
     ?><p>&nbsp;</p><p><strong>Exclude CSS</strong></p><?php
@@ -793,7 +796,7 @@ function anypost_meta_select_fsc() {
         'name' => 'id-exclude',
         'placeholder' => '------',
         'options' => $css_posts,
-        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id-exclude' )[0],
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id-exclude' )[0] ?? '',
     ]);
 
     wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
@@ -808,8 +811,7 @@ function delete_the_plugin() {
 // new version set
 // svn upload
 
-// ++limit meta boxes to admins too!!!
-// ++add formatting button like https://codemirror.net/2/demo/formatting.html
+// ++split in files
 // ++add the bigger height button and save it
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
@@ -817,3 +819,4 @@ function delete_the_plugin() {
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
 // ++!!??add small textarea to every public post along with css like for a unique background-image in hero
 // ++list of styles to defer like with deregister
+// ++deregister all by *
