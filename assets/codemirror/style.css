@@ -1,0 +1,13 @@
+#fcpfsc-rest-css-defer {
+    margin-top: 12px;
+}
+
+.CodeMirror pre.CodeMirror-placeholder {
+    color: #888;
+}
+
+button[name=format] {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+}

@@ -13,12 +13,15 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
 
 namespace FCP\FirstScreenCSS;
-
 defined( 'ABSPATH' ) || exit;
+
+define( 'FCPFSC_DEV', true );
+define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
 define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
 
+define( 'FCPFSC_CM_VER', '5.65.13' );
 
 // print the styles
 add_action( 'wp_enqueue_scripts', function() {
@@ -258,7 +261,7 @@ add_action( 'admin_footer', function() {
     <?php
 });
 
-// codemirror editor instead of tinymce
+// disable timymce to textarea
 add_filter( 'wp_editor_settings', function($settings, $editor_id) {
 
     if ( $editor_id !== 'content' ) { return $settings; }
@@ -273,6 +276,7 @@ add_filter( 'wp_editor_settings', function($settings, $editor_id) {
     return $settings;
 }, 10, 2 );
 
+// apply codemirror to the fields for CSS
 add_action( 'admin_enqueue_scripts', function( $hook ) {
 
     if ( !in_array( $hook, ['post.php', 'post-new.php'] ) ) { return; }
@@ -280,9 +284,16 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $screen = get_current_screen();
     if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG ) { return; }
 
-    wp_enqueue_script( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.js', ['jquery'], '5.65.13' );
-    wp_add_inline_script( 'codemirror', file_get_contents( __DIR__ . '/assets/codemirror/init.js') );
-    wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css' );
+    wp_enqueue_script( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.js', ['jquery'], FCPFSC_CM_VER );
+    wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['jquery'], FCPFSC_VER  );
+
+    wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css', [], FCPFSC_CM_VER );
+    wp_enqueue_style( 'codemirror-style', plugin_dir_url(__FILE__) . 'assets/codemirror/style.css', ['codemirror'], FCPFSC_VER );
+
+    wp_enqueue_script( 'codemirror-mode-css', plugin_dir_url(__FILE__) . 'assets/codemirror/mode/css/css.js', ['codemirror'], FCPFSC_CM_VER );
+    wp_enqueue_script( 'codemirror-addon-active-line', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/selection/active-line.js', ['codemirror'], FCPFSC_CM_VER );
+    wp_enqueue_script( 'codemirror-addon-placeholder', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/display/placeholder.js', ['codemirror'], FCPFSC_CM_VER );
+    wp_enqueue_script( 'codemirror-formatting', plugin_dir_url(__FILE__) . 'assets/codemirror/util/formatting.js', ['codemirror'], '2.38+' );
 });
 
 // save meta data
@@ -744,11 +755,6 @@ function fcpfsc_meta_rest_css() {
 
     textarea( (object) [
         'name' => 'rest-css',
-        'placeholder' => '/* enter your css here */
-* {
-    border-left: 1px dotted green;
-    box-sizing: border-box;
-}',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0],
     ]);
 
