@@ -280,11 +280,9 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $screen = get_current_screen();
     if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG ) { return; }
 
-    $cm_settings['codeEditor'] = wp_enqueue_code_editor( ['type' => 'text/css'] );
-    wp_localize_script( 'jquery', 'cm_settings', $cm_settings );
-    wp_enqueue_script( 'wp-theme-plugin-editor' );
-    wp_add_inline_script( 'wp-theme-plugin-editor', file_get_contents( __DIR__ . '/assets/codemirror-init.js') );
-    wp_enqueue_style( 'wp-codemirror' );
+    wp_enqueue_script( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.js', ['jquery'], '5.65.13' );
+    wp_add_inline_script( 'codemirror', file_get_contents( __DIR__ . '/assets/codemirror/init.js') );
+    wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css' );
 });
 
 // save meta data
