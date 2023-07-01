@@ -4,7 +4,7 @@ Tags: inline, css, firstscreen, style, web vitals, cls, fcp, defer, dequeue, der
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
-Stable tag: 1.3
+Stable tag: 1.4
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
@@ -14,16 +14,16 @@ FCP First Screen CSS inline
 
 == Description ==
 
-Insert the inline CSS to the head of the website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
+Insert the inline CSS to the head tag of a website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
 
 = Features =
 
 * Apply to any single post / page / custom post-type
 * Apply to all posts of a particular post-type
-* Apply to the blog or the archive page of a post-type
-* It minifies the css before printing
+* Apply to the blog or any post-type archive
+* It minifies the CSS before printing
 * Deregister enqueued styles and scripts by name
-* Apply not-first-screen CSS separately
+* Apply the not-first-screen CSS separately
 * Defer the not-first-screen CSS loading
 
 = Demo =
@@ -51,6 +51,11 @@ You can modify the code for your needs, or suggest improvemens on [GitHub](https
 Waiting for your questions, which you can ask [here](https://firmcatalyst.com/contact/) or via GitHub.
 
 == Upgrade Notice ==
+
+= 1.4 =
+
+* Added the Format button to spread new lines and tabs (spaces)
+* Fixed the CSS minification for bigger content
 
 = 1.3 =
 

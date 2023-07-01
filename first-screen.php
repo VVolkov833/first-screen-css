@@ -811,6 +811,7 @@ function delete_the_plugin() {
 // new version set
 // svn upload
 
+// ++checkbox for apply to all posts
 // ++split in files
 // ++add the bigger height button and save it
 // ++switch selects to checkboxes or multiples

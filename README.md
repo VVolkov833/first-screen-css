@@ -1,15 +1,15 @@
 # FCP First Screen CSS
 
-Insert the inline CSS to the head of the website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
+Insert the inline CSS to the head tag of a website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
 
 ## Features
 
 * Apply to any single post / page / custom post-type
 * Apply to all posts of a particular post-type
-* Apply to the blog or the archive page of a post-type
-* It minifies the css before printing
+* Apply to the blog or any post-type archive
+* It minifies the CSS before printing
 * Deregister enqueued styles and scripts by name
-* Apply not-first-screen CSS separately
+* Apply the not-first-screen CSS separately
 * Defer the not-first-screen CSS loading
 
 ## Demo
