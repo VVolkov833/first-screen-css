@@ -668,11 +668,14 @@ function get_all_post_types() {
 }
 
 function css_minify($css) {
-    $css = preg_replace( '/\/\*(?:.*?)*\*\//', '', $css ); // remove comments
-    $css = preg_replace( '/\s+/', ' ', $css ); // one-line & only single speces
-    $css = preg_replace( '/ ?([\{\};:\>\~\+]) ?/', '$1', $css ); // remove spaces
-    $css = preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions
-    $css = preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
+    $preg_replace = function($regexp, $replace, $string) { // avoid null result so that css still works even though not fully minified
+        return preg_replace( $regexp, $replace, $string ) ?: $string . '/* --- failed '.$regexp.', '.$replace.' */';
+    };
+    $css = $preg_replace( '/\s+/', ' ', $css ); // one-line & only single speces
+    $css = $preg_replace( '/ ?\/\*(?:.*?)\*\/ ?/', '', $css ); // remove comments
+    $css = $preg_replace( '/ ?([\{\};:\>\~\+]) ?/', '$1', $css ); // remove spaces
+    $css = $preg_replace( '/\+(\d)/', ' + $1', $css ); // restore spaces in functions
+    $css = $preg_replace( '/(?:[^\}]*)\{\}/', '', $css ); // remove empty properties
     $css = str_replace( [';}', '( ', ' )'], ['}', '(', ')'], $css ); // remove last ; and spaces
     // ++ should also remove 0 from 0.5, but not from svg-s?
     // ++ try replacing ', ' with ','
