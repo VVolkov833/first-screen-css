@@ -2,7 +2,7 @@
 Contributors: Firmcatalyst
 Tags: inline, css, firstscreen, style, web vitals, cls, fcp, defer, dequeue, deregister
 Requires at least: 5.8
-Tested up to: 6.1
+Tested up to: 6.2
 Requires PHP: 7.4
 Stable tag: 1.4
 Author: Firmcatalyst, Vadim Volkov
@@ -22,7 +22,7 @@ Insert the inline CSS to the head tag of a website, disable existing styles and 
 * Apply to all posts of a particular post-type
 * Apply to the blog or any post-type archive
 * It minifies the CSS before printing
-* Deregister enqueued styles and scripts by name
+* Deregister styles and scripts: all or by name
 * Apply the not-first-screen CSS separately
 * Defer the not-first-screen CSS loading
 
@@ -55,7 +55,9 @@ Waiting for your questions, which you can ask [here](https://firmcatalyst.com/co
 = 1.4 =
 
 * Added the Format button to spread new lines and tabs (spaces)
+* Added the option to deregister all styles or scripts at once
 * Fixed the CSS minification for bigger content
+* Removed the Front page from bulk exceptions
 
 = 1.3 =
 

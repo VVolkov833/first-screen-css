@@ -20,6 +20,7 @@ define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ]
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
 define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
+define( 'FCPFSC_FRONT_PREF', 'first-screen' );
 
 define( 'FCPFSC_CM_VER', '5.65.13' );
 
@@ -43,15 +44,14 @@ add_action( 'wp_enqueue_scripts', function() {
 
     if ( is_singular( $post_type ) ) {
         // get css by post id 
-        $css_id = get_post_meta( $qo->ID, FCPFSC_PREF.'id' )[0];
-        if ( isset( $css_id ) ) {
+        if ( $css_id = get_post_meta( $qo->ID, FCPFSC_PREF.'id' )[0] ?? null ) {
             $csss[] = $css_id;
         }
-        unset( $css_id );
+
         // get css by post-type
-        if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they stand out, mostly
-            $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-types', $post_type ) );
-        }
+        //if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they stand out, mostly
+        $csss = array_merge( $csss, get_css_ids( FCPFSC_PREF.'post-types', $post_type ) );
+        //}
     }
     if ( is_home() || is_archive() && ( !$post_type || $post_type === 'page' ) ) {
         // get css for blog
@@ -68,31 +68,48 @@ add_action( 'wp_enqueue_scripts', function() {
     $csss = filter_csss( $csss );
 
     // filter by exclude
-    if ( $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ) {
+    if ( $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ?? null ) {
         $csss = array_values( array_diff( $csss, [ $css_exclude ] ) );
     }
 
     if ( empty( $csss ) ) { return; }
 
     // print styles
-    wp_register_style( 'first-screen', false );
-    wp_enqueue_style( 'first-screen' );
-    wp_add_inline_style( 'first-screen', get_css_contents_filtered( $csss ) );
+    wp_register_style( FCPFSC_FRONT_PREF, false );
+    wp_enqueue_style( FCPFSC_FRONT_PREF );
+    wp_add_inline_style( FCPFSC_FRONT_PREF, get_css_contents_filtered( $csss ) );
 
 
     // deregister existing styles
-    $deregister_styles = function() use ( $csss ) {
+    $deregister = function() use ( $csss ) {
         list( $styles, $scripts ) = get_to_deregister( $csss );
-        foreach ( $styles as $v ) {
-            wp_deregister_style( $v );
-        }
-        foreach ( $scripts as $v ) {
-            wp_deregister_script( $v );
-        }
+
+        $deregister = function($list, $ss) {
+            if ( empty( $list ) ) { return; }
+
+            if ( in_array( '*', $list ) ) { // get all registered
+                $global = 'wp_'.$ss.'s';
+                global $$global;
+
+                $list = array_map( function( $el ) {
+                    $name = $el->handle;
+                    if ( strpos( $name, FCPFSC_FRONT_PREF ) === 0 ) { return ''; }
+                    return $name ?? '';
+                }, (array) $$global->registered ?? [] );
+            }
+
+            $func = 'wp_deregister_'.$ss;
+            foreach ( $list as $v ) {
+                $func( $v );
+            }
+        };
+
+        $deregister( $styles, 'style' );
+        $deregister( $scripts, 'script' );
     };
-    add_action( 'wp_enqueue_scripts', $deregister_styles, 100000 );
-    add_action( 'wp_footer', $deregister_styles, 1 );
-    add_action( 'wp_footer', $deregister_styles, 11 );
+    add_action( 'wp_enqueue_scripts', $deregister, 100000 );
+    add_action( 'wp_footer', $deregister, 1 );
+    add_action( 'wp_footer', $deregister, 11 );
 
 
     // enqueue the rest-screen styles
@@ -101,7 +118,7 @@ add_action( 'wp_enqueue_scripts', function() {
             $path = '/' . basename( __DIR__ ) . '/style-'.$id.'.css';
             if ( !is_file( wp_upload_dir()['basedir'] . $path ) ) { continue; }
             wp_enqueue_style(
-                'first-screen-css-rest-' . $id,
+                FCPFSC_FRONT_PREF.'-css-rest-' . $id,
                 wp_upload_dir()['baseurl'] . $path,
                 [],
                 filemtime( wp_upload_dir()['basedir'] . $path ),
@@ -112,7 +129,7 @@ add_action( 'wp_enqueue_scripts', function() {
         // defer loading
         $defer_csss = get_to_defer( $csss );
         add_filter( 'style_loader_tag', function ($tag, $handle) use ($defer_csss) {
-            if ( strpos( $handle, 'first-screen-css-rest-' ) === false || !in_array( str_replace( 'first-screen-css-rest-', '', $handle ), $defer_csss ) ) {
+            if ( strpos( $handle, FCPFSC_FRONT_PREF.'-css-rest-' ) === false || !in_array( str_replace( FCPFSC_FRONT_PREF.'-css-rest-', '', $handle ), $defer_csss ) ) {
                 return $tag;
             }
             return
@@ -195,7 +212,7 @@ add_action( 'add_meta_boxes', function() {
     if ( !current_user_can( 'administrator' ) ) { return; }
 
     add_meta_box(
-        'first-screen-css-bulk',
+        FCPFSC_FRONT_PREF.'-css-bulk',
         'Bulk apply',
         'FCP\FirstScreenCSS\fcpfsc_meta_bulk_apply',
         FCPFSC_SLUG,
@@ -203,7 +220,7 @@ add_action( 'add_meta_boxes', function() {
         'high'
     );
     add_meta_box(
-        'first-screen-css-disable',
+        FCPFSC_FRONT_PREF.'-css-disable',
         'Disable enqueued',
         'FCP\FirstScreenCSS\fcpfsc_meta_disable_styles',
         FCPFSC_SLUG,
@@ -211,7 +228,7 @@ add_action( 'add_meta_boxes', function() {
         'low'
     );
     add_meta_box(
-        'first-screen-css-rest',
+        FCPFSC_FRONT_PREF.'-css-rest',
         'The rest of CSS, which is a not-first-screen',
         'FCP\FirstScreenCSS\fcpfsc_meta_rest_css',
         FCPFSC_SLUG,
@@ -221,7 +238,7 @@ add_action( 'add_meta_boxes', function() {
 
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
-        'first-screen-css',
+        FCPFSC_FRONT_PREF.'-css',
         'Select First Screen CSS',
         'FCP\FirstScreenCSS\anypost_meta_select_fsc',
         array_keys( $public_post_types ),
@@ -670,7 +687,7 @@ function get_all_post_types() {
             $archive[ $type->name ] = $type->label;
         }
         if ( $type->public ) {
-            if ( $type->name === 'page' ) { $type->label .= ' (except Front Page)'; }
+            //if ( $type->name === 'page' ) { $type->label .= ' (except Front Page)'; }
             $public[ $type->name ] = $type->label;
         }
     }
@@ -735,21 +752,23 @@ function fcpfsc_meta_bulk_apply() {
 function fcpfsc_meta_disable_styles() {
     global $post;
 
-    ?><p><strong>List the names of STYLES to deregister, separate by comma</strong></p><?php
+    ?><p><strong>List the names of STYLES to deregister</strong></p><?php
 
     input( (object) [
         'name' => 'deregister-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0] ?? '',
     ]);
+    ?>Separate names by comma. To deregister all styles set *<?php
 
-    ?><p><strong>List the names of SCRIPTS to deregister, separate by comma</strong></p><?php
+    ?><p><strong>List the names of SCRIPTS to deregister</strong></p><?php
 
     input( (object) [
         'name' => 'deregister-script-names',
         'placeholder' => 'my-theme-script, some-plugin-script',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-script-names' )[0] ?? '',
     ]);
+    ?>Separate names by comma. To deregister all scripts set *<?php
 
 }
 

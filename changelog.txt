@@ -1,7 +1,9 @@
 = 1.4 =
 
 * Added the Format button to spread new lines and tabs (spaces)
+* Added the option to deregister all styles or scripts at once
 * Fixed the CSS minification for bigger content
+* Removed the Front page from bulk exceptions
 
 = 1.3 =
 

@@ -8,7 +8,7 @@ Insert the inline CSS to the head tag of a website, disable existing styles and 
 * Apply to all posts of a particular post-type
 * Apply to the blog or any post-type archive
 * It minifies the CSS before printing
-* Deregister enqueued styles and scripts by name
+* Deregister styles and scripts: all or by name
 * Apply the not-first-screen CSS separately
 * Defer the not-first-screen CSS loading
 
