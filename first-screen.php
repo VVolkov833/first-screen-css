@@ -334,7 +334,7 @@ add_action( 'save_post', function( $postID ) {
 
     // exception for the rest-css ++ improve when having different function for processing values
     $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
-    unlink( $file );
+    @unlink( $file );
 
     foreach ( $fields as $f ) {
         $f = FCPFSC_PREF . $f;
@@ -835,13 +835,10 @@ function delete_the_plugin() {
 // new version set
 // svn upload
 
-// ++checkbox for apply to all posts
-// ++split in files
+// ++refactor - split in files
 // ++add the bigger height button and save it
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
-// ++!!??add small textarea to every public post along with css like for a unique background-image in hero
-// ++list of styles to defer like with deregister
-// ++deregister all by *
+// ++list of styles to defer like with deregister?
