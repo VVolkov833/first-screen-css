@@ -332,6 +332,10 @@ add_action( 'save_post', function( $postID ) {
         $fields = [ 'id', 'id-exclude' ];
     }
 
+    // exception for the rest-css ++ improve when having different function for processing values
+    $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
+    unlink( $file );
+
     foreach ( $fields as $f ) {
         $f = FCPFSC_PREF . $f;
         if ( empty( $_POST[ $f ] ) || empty( $new_value = sanitize_meta( $_POST[ $f ], $f, $postID ) ) ) {
@@ -424,8 +428,9 @@ function sanitize_meta( $value, $field, $postID ) {
         break;
         case ( 'rest-css' ):
 
-            list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to a separate filter / actions, organize better with errors?
+            list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to a separate filter / actions, organize better with errors!!
             $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
+
             // correct
             if ( empty( $errors ) ) {
                 file_put_contents( $file, css_minify( $filtered ) ); //++ add the permission error
