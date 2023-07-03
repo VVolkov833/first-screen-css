@@ -280,15 +280,18 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $wp_scripts->add_data( 'jquery-core', 'data', $jquery_extra_core_data );
     //echo '***'; print_r( $wp_scripts ); exit;
 
+    // codemirror core
     wp_enqueue_script( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.js', ['jquery'], FCPFSC_CM_VER );
-    wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['codemirror'], FCPFSC_VER  );
-
     wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css', [], FCPFSC_CM_VER );
 
+    // codemirror addons
     wp_enqueue_script( 'codemirror-mode-css', plugin_dir_url(__FILE__) . 'assets/codemirror/mode/css/css.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-addon-active-line', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/selection/active-line.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-addon-placeholder', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/display/placeholder.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-formatting', plugin_dir_url(__FILE__) . 'assets/codemirror/util/formatting.js', ['codemirror'], '2.38+' );
+
+    // codemirror init
+    wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['codemirror'], FCPFSC_VER  );
 
     // overall styling
     wp_enqueue_style( 'codemirror-style', plugin_dir_url(__FILE__) . 'assets/style.css', ['codemirror'], FCPFSC_VER );
