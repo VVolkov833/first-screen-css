@@ -274,7 +274,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     wp_deregister_script( 'code-editor' );
     wp_deregister_style( 'wp-codemirror' );
 
-    global $wp_scripts; // remove cm_settings
+    global $wp_scripts; // remove cm_settings // priority 11 is for this part mostly - default is fine for the rest
     $jquery_extra_core_data = $wp_scripts->get_data( 'jquery-core', 'data' );
     $jquery_extra_core_data = preg_replace( '/var cm_settings(?:.*?);/', '', $jquery_extra_core_data );
     $wp_scripts->add_data( 'jquery-core', 'data', $jquery_extra_core_data );
@@ -819,7 +819,7 @@ function delete_the_plugin() {
 // svn upload
 
 // ++refactor - split in files
-// ++add the bigger height button and save it
+// ++add the @bigger height@ button and save new height in local storage
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
