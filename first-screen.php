@@ -247,38 +247,6 @@ add_action( 'add_meta_boxes', function() {
     );
 });
 
-// style meta boxes
-add_action( 'admin_footer', function() {
-
-    $screen = get_current_screen();
-    if ( !isset( $screen ) || !is_object( $screen ) || !in_array( $screen->base, [ 'post' ] ) ) { return; } // ++to inline css & include ++if can admin
-
-    ?>
-    <style type="text/css">
-    [id^=first-screen-css] select {
-        width:100%;
-        box-sizing:border-box;
-    }
-    [id^=first-screen-css] fieldset label {
-        display:inline-block;
-        min-width:90px;
-        margin-right:16px;
-        white-space:nowrap;
-    }
-    [id^=first-screen-css] input[type=text],
-    [id^=first-screen-css] textarea {
-        width:100%;
-    }
-    [id^=first-screen-css] p {
-        margin:30px 0 10px;
-    }
-    [id^=first-screen-css] p + p {
-        margin-top:10px;
-    }
-    </style>
-    <?php
-});
-
 // disable timymce to textarea
 add_filter( 'wp_editor_settings', function($settings, $editor_id) {
 
@@ -316,12 +284,14 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['codemirror'], FCPFSC_VER  );
 
     wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css', [], FCPFSC_CM_VER );
-    wp_enqueue_style( 'codemirror-style', plugin_dir_url(__FILE__) . 'assets/codemirror/style.css', ['codemirror'], FCPFSC_VER );
 
     wp_enqueue_script( 'codemirror-mode-css', plugin_dir_url(__FILE__) . 'assets/codemirror/mode/css/css.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-addon-active-line', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/selection/active-line.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-addon-placeholder', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/display/placeholder.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-formatting', plugin_dir_url(__FILE__) . 'assets/codemirror/util/formatting.js', ['codemirror'], '2.38+' );
+
+    // overall styling
+    wp_enqueue_style( 'codemirror-style', plugin_dir_url(__FILE__) . 'assets/style.css', ['codemirror'], FCPFSC_VER );
 }, 11 );
 
 // save meta data
