@@ -302,8 +302,18 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     $screen = get_current_screen();
     if ( !isset( $screen ) || !is_object( $screen ) || $screen->post_type !== FCPFSC_SLUG ) { return; }
 
+    // remove wp-native codemirror
+    wp_deregister_script( 'code-editor' );
+    wp_deregister_style( 'wp-codemirror' );
+
+    global $wp_scripts; // remove cm_settings
+    $jquery_extra_core_data = $wp_scripts->get_data( 'jquery-core', 'data' );
+    $jquery_extra_core_data = preg_replace( '/var cm_settings(?:.*?);/', '', $jquery_extra_core_data );
+    $wp_scripts->add_data( 'jquery-core', 'data', $jquery_extra_core_data );
+    //echo '***'; print_r( $wp_scripts ); exit;
+
     wp_enqueue_script( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.js', ['jquery'], FCPFSC_CM_VER );
-    wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['jquery'], FCPFSC_VER  );
+    wp_enqueue_script( 'codemirror-init', plugin_dir_url(__FILE__) . '/assets/codemirror/init.js', ['codemirror'], FCPFSC_VER  );
 
     wp_enqueue_style( 'codemirror', plugin_dir_url(__FILE__) . 'assets/codemirror/codemirror.css', [], FCPFSC_CM_VER );
     wp_enqueue_style( 'codemirror-style', plugin_dir_url(__FILE__) . 'assets/codemirror/style.css', ['codemirror'], FCPFSC_VER );
@@ -312,7 +322,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     wp_enqueue_script( 'codemirror-addon-active-line', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/selection/active-line.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-addon-placeholder', plugin_dir_url(__FILE__) . 'assets/codemirror/addon/display/placeholder.js', ['codemirror'], FCPFSC_CM_VER );
     wp_enqueue_script( 'codemirror-formatting', plugin_dir_url(__FILE__) . 'assets/codemirror/util/formatting.js', ['codemirror'], '2.38+' );
-});
+}, 11 );
 
 // save meta data
 add_action( 'save_post', function( $postID ) {
