@@ -301,7 +301,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 add_action( 'save_post', function( $postID ) {
 
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-    if ( !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
+    if ( empty( $_POST[ FCPPBK_PREF.'nounce-name' ] ) || !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
     //if ( !current_user_can( 'edit_post', $postID ) ) { return; }
     if ( !current_user_can( 'administrator' ) ) { return; }
 
