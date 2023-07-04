@@ -1,3 +1,8 @@
+= 1.5 =
+
+* Added the Wrap button to softly break / unbreak long lines
+* Added the Infinity button to fit the editor's height to the content
+
 = 1.4 =
 
 * Added the Format button to spread new lines and tabs (spaces)

@@ -27,8 +27,16 @@
     color: #888;
 }
 
-button[name=format] {
+button[name=format], button[name=linewrap], button[name=infinity] {
     position: absolute;
     z-index: 1;
     top: 0;
+    left: -15px;
+    font-family: monospace;
+}
+button[name=linewrap] {
+    top: 26px;
+}
+button[name=infinity] {
+    top: 52px;
 }

@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.4.01
+Version: 1.5
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
@@ -548,6 +548,7 @@ function textarea($a) {
         rows="<?php echo isset( $a->rows ) ? esc_attr( $a->rows ) : '10' ?>" cols="<?php echo isset( $a->cols ) ? esc_attr( $a->cols ) : '50' ?>"
         placeholder="<?php echo isset( $a->placeholder ) ? esc_attr( $a->placeholder ) : '' ?>"
         class="<?php echo isset( $a->className ) ? esc_attr( $a->className ) : '' ?>"
+        style="<?php echo isset( $a->style ) ? esc_attr( $a->style ) : '' ?>"
     ><?php
         echo esc_textarea( isset( $a->value ) ? $a->value : '' )
     ?></textarea>
@@ -766,6 +767,7 @@ function fcpfsc_meta_rest_css() {
     textarea( (object) [
         'name' => 'rest-css',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css' )[0] ?? '',
+        'style' => 'height:300px',
     ]);
 
     checkboxes( (object) [

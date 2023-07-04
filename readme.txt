@@ -4,7 +4,7 @@ Tags: inline, css, firstscreen, style, web vitals, cls, fcp, defer, dequeue, der
 Requires at least: 5.8
 Tested up to: 6.2
 Requires PHP: 7.4
-Stable tag: 1.4.01
+Stable tag: 1.5
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
@@ -51,6 +51,11 @@ You can modify the code for your needs, or suggest improvemens on [GitHub](https
 Waiting for your questions, which you can ask [here](https://firmcatalyst.com/contact/) or via GitHub.
 
 == Upgrade Notice ==
+
+= 1.5 =
+
+* Added the Wrap button to softly break / unbreak long lines
+* Added the Infinity button to fit the editor's height to the content
 
 = 1.4 =
 
