@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.5
+Version: 1.5.01
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
@@ -301,7 +301,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 add_action( 'save_post', function( $postID ) {
 
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-    if ( empty( $_POST[ FCPPBK_PREF.'nounce-name' ] ) || !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
+    if ( empty( $_POST[ FCPFSC_VER.'nounce-name' ] ) || !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
     //if ( !current_user_can( 'edit_post', $postID ) ) { return; }
     if ( !current_user_can( 'administrator' ) ) { return; }
 
