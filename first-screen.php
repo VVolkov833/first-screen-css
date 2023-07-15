@@ -301,8 +301,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 add_action( 'save_post', function( $postID ) {
 
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-    if ( empty( $_POST[ FCPFSC_VER.'nounce-name' ] ) || !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nounce-name' ], FCPFSC_PREF.'nounce-action' ) ) { return; }
-    //if ( !current_user_can( 'edit_post', $postID ) ) { return; }
+    if ( empty( $_POST[ FCPPBK_PREF.'nonce' ] ) || !wp_verify_nonce( $_POST[ FCPPBK_PREF.'nonce' ], FCPPBK_PREF.'nonce' ) ) { return; }
     if ( !current_user_can( 'administrator' ) ) { return; }
 
     $post = get_post( $postID );
@@ -735,7 +734,9 @@ function fcpfsc_meta_bulk_apply() {
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0] ?? '',
     ]);
 
-    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
+    ?>
+    <input type="hidden" name="<?php echo esc_attr( FCPPBK_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPPBK_PREF.'nonce' ) ) ?>">
+    <?php
 }
 
 function fcpfsc_meta_disable_styles() {
@@ -808,7 +809,9 @@ function anypost_meta_select_fsc() {
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'id-exclude' )[0] ?? '',
     ]);
 
-    wp_nonce_field( FCPFSC_PREF.'nounce-action', FCPFSC_PREF.'nounce-name' );
+    ?>
+    <input type="hidden" name="<?php echo esc_attr( FCPPBK_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPPBK_PREF.'nonce' ) ) ?>">
+    <?php
 }
 
 function delete_the_plugin() {
