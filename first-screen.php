@@ -15,7 +15,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
-define( 'FCPFSC_DEV', false );
+define( 'FCPFSC_DEV', true );
 define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
@@ -301,7 +301,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
 add_action( 'save_post', function( $postID ) {
 
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-    if ( empty( $_POST[ FCPPBK_PREF.'nonce' ] ) || !wp_verify_nonce( $_POST[ FCPPBK_PREF.'nonce' ], FCPPBK_PREF.'nonce' ) ) { return; }
+    if ( empty( $_POST[ FCPFSC_PREF.'nonce' ] ) || !wp_verify_nonce( $_POST[ FCPFSC_PREF.'nonce' ], FCPFSC_PREF.'nonce' ) ) { return; }
     if ( !current_user_can( 'administrator' ) ) { return; }
 
     $post = get_post( $postID );
@@ -735,7 +735,7 @@ function fcpfsc_meta_bulk_apply() {
     ]);
 
     ?>
-    <input type="hidden" name="<?php echo esc_attr( FCPPBK_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPPBK_PREF.'nonce' ) ) ?>">
+    <input type="hidden" name="<?php echo esc_attr( FCPFSC_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPFSC_PREF.'nonce' ) ) ?>">
     <?php
 }
 
@@ -810,7 +810,7 @@ function anypost_meta_select_fsc() {
     ]);
 
     ?>
-    <input type="hidden" name="<?php echo esc_attr( FCPPBK_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPPBK_PREF.'nonce' ) ) ?>">
+    <input type="hidden" name="<?php echo esc_attr( FCPFSC_PREF ) ?>nonce" value="<?= esc_attr( wp_create_nonce( FCPFSC_PREF.'nonce' ) ) ?>">
     <?php
 }
 
