@@ -2,7 +2,7 @@
 /*
 Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
-Version: 1.5.01
+Version: 1.5.02
 Requires at least: 5.8
 Tested up to: 6.1
 Requires PHP: 7.4
@@ -15,7 +15,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
-define( 'FCPFSC_DEV', true );
+define( 'FCPFSC_DEV', false );
 define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
