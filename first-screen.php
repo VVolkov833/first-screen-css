@@ -4,7 +4,7 @@ Plugin Name: FCP First Screen CSS
 Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
 Version: 1.5.02
 Requires at least: 5.8
-Tested up to: 6.1
+Tested up to: 6.3
 Requires PHP: 7.4
 Author: Firmcatalyst, Vadim Volkov
 Author URI: https://firmcatalyst.com
@@ -22,7 +22,7 @@ define( 'FCPFSC_SLUG', 'fcpfsc' );
 define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
 define( 'FCPFSC_FRONT_PREF', 'first-screen' );
 
-define( 'FCPFSC_CM_VER', '5.65.13' );
+define( 'FCPFSC_CM_VER', '5.65.13' ); // codemirror version
 
 // print the styles
 add_action( 'wp_enqueue_scripts', function() {
@@ -221,7 +221,7 @@ add_action( 'add_meta_boxes', function() {
     );
     add_meta_box(
         FCPFSC_FRONT_PREF.'-css-disable',
-        'Disable enqueued',
+        'Deregister styles and scripts',
         'FCP\FirstScreenCSS\fcpfsc_meta_disable_styles',
         FCPFSC_SLUG,
         'normal',
@@ -730,7 +730,7 @@ function fcpfsc_meta_bulk_apply() {
 
     checkboxes( (object) [
         'name' => 'development-mode',
-        'options' => ['on' => 'Development mode (apply only if the post is visited as the admin)'],
+        'options' => ['on' => 'Development mode (apply only if the post is visited by administrator)'],
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0] ?? '',
     ]);
 
