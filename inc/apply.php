@@ -90,6 +90,29 @@ add_action( 'wp_enqueue_scripts', function() {
 
     //-------------------------------------------------------------------------------------
 
+    // inline styles and scripts
+    $inline = function() use ( $csss ) {
+        static $store_styles = [];
+
+        list( $styles, $scripts ) = get_ss_to_inline( $csss );
+
+        if ( in_array( '*', $styles ) ) { $styles = get_all_styles(); }
+        $styles = array_diff( $styles, $store_styles );
+        if ( empty( $styles ) ) { return; }
+        $store_styles = array_merge( $store_styles, $styles );
+        foreach ( $styles as $v ) {
+            wp_deregister_style( $v );
+            wp_register_style( $v, false );
+            wp_enqueue_style( $v );
+            wp_add_inline_style( $v, $CONTENT );
+        }
+
+
+    };
+    add_action( 'wp_enqueue_scripts', $inline, 100000 );
+    add_action( 'wp_footer', $inline, 1 );
+    add_action( 'wp_footer', $inline, 11 );
+
     // defer styles and scripts
     $defer = function() use ( $csss ) {
 
@@ -104,7 +127,8 @@ add_action( 'wp_enqueue_scripts', function() {
     };
     add_action( 'wp_enqueue_scripts', $defer, 100000 );
     add_action( 'wp_footer', $defer, 1 );
-    add_action( 'wp_footer', $defer, 11 );    
+    add_action( 'wp_footer', $defer, 11 );
+
 
     // deregister styles and scripts
     $deregister = function() use ( $csss ) {
