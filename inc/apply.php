@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 // print the styles
 add_action( 'wp_enqueue_scripts', function() {
 
-    // collect css-s to print on the post
+    // collects css-s to print
     $csss = [];
 
     // get the post type
@@ -56,13 +56,40 @@ add_action( 'wp_enqueue_scripts', function() {
 
     if ( empty( $csss ) ) { return; }
 
+    //-------------------------------------------------------------------------------------
     // print styles
     wp_register_style( FCPFSC_FRONT_NAME, false );
     wp_enqueue_style( FCPFSC_FRONT_NAME );
-    wp_add_inline_style( FCPFSC_FRONT_NAME, get_css_contents_filtered( $csss ) );
+    wp_add_inline_style( FCPFSC_FRONT_NAME, get_csss_contents( $csss ) );
 
 
-    // deregister existing styles
+    //-------------------------------------------------------------------------------------
+    // enqueue the rest-screen styles
+    add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
+
+        foreach ( $csss as $id ) {
+            $path = '/' . basename( __DIR__ ) . '/style-'.$id.'.css';
+            if ( !is_file( wp_upload_dir()['basedir'] . $path ) ) { continue; }
+            wp_enqueue_style(
+                FCPFSC_FRONT_NAME.'-css-rest-'.$id,
+                wp_upload_dir()['baseurl'].$path,
+                [],
+                filemtime( wp_upload_dir()['basedir'].$path ),
+                'all'
+            );
+        }
+
+        // defer loading the rest-screen styles
+        $defer_csss = get_rest_to_defer( $csss );
+        $defer_names = array_map( function( $id ) {
+            return FCPFSC_FRONT_NAME.'-css-rest-'.$id;
+        }, $defer_csss ?? [] );
+        defer_style( $defer_names );
+
+    }, 10 );
+
+    //-------------------------------------------------------------------------------------
+    // deregister all existing styles
     $deregister = function() use ( $csss ) {
         list( $styles, $scripts ) = get_all_to_deregister( $csss );
 
@@ -72,6 +99,8 @@ add_action( 'wp_enqueue_scripts', function() {
             if ( in_array( '*', $list ) ) { // get all registered
                 $global = 'wp_'.$ss.'s';
                 global $$global;
+
+                if ( !isset( $$global ) ) { return; }
 
                 $list = array_map( function( $el ) {
                     $name = $el->handle;
@@ -93,43 +122,23 @@ add_action( 'wp_enqueue_scripts', function() {
     add_action( 'wp_footer', $deregister, 1 );
     add_action( 'wp_footer', $deregister, 11 );
 
-
-    // enqueue the rest-screen styles
-    add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
-        foreach ( $csss as $id ) {
-            $path = '/' . basename( __DIR__ ) . '/style-'.$id.'.css';
-            if ( !is_file( wp_upload_dir()['basedir'] . $path ) ) { continue; }
-            wp_enqueue_style(
-                FCPFSC_FRONT_NAME.'-css-rest-' . $id,
-                wp_upload_dir()['baseurl'] . $path,
-                [],
-                filemtime( wp_upload_dir()['basedir'] . $path ),
-                'all'
-            );
-        }
-
-        // defer loading
-        $defer_csss = get_to_defer( $csss );
-        add_filter( 'style_loader_tag', function ($tag, $handle) use ($defer_csss) {
-            if ( strpos( $handle, FCPFSC_FRONT_NAME.'-css-rest-' ) === false || !in_array( str_replace( FCPFSC_FRONT_NAME.'-css-rest-', '', $handle ), $defer_csss ) ) {
-                return $tag;
-            }
-            return
-                str_replace( [ 'rel="stylesheet"', "rel='stylesheet'" ], [
-                    'rel="preload" as="style" onload="this.onload=null;this.rel=\'stylesheet\'"',
-                    "rel='preload' as='style' onload='this.onload=null;this.rel=\"stylesheet\"'"
-                ], $tag ).
-                '<noscript>'.str_replace( // remove doubling id
-                    [ ' id="'.$handle.'-css"', " id='".$handle."-css'" ],
-                    [ '', '' ],
-                    substr( $tag, 0, -1 )
-                ).'</noscript>' . "\n"
-            ;
-        }, 10, 2);
-    }, 10 );
-
 }, 7 );
 
+
+function get_css_ids( $key, $type = 'post' ) {
+
+    global $wpdb;
+
+    $ids = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+
+        SELECT `post_id`
+        FROM `'.$wpdb->postmeta.'`
+        WHERE `meta_key` = %s AND `meta_value` LIKE %s
+
+    ', $key, $wpdb->add_placeholder_escape( '%"'.$type.'"%' ) ) ) );
+
+    return $ids;
+}
 
 function filter_csss( $ids ) {
 
@@ -161,22 +170,25 @@ function filter_csss( $ids ) {
     return array_values( array_diff( $filtered_ids, $dev_mode ) );
 }
 
-function get_css_ids( $key, $type = 'post' ) {
+function get_csss_contents( $ids ) { // ++add proper ordering
+
+    if ( empty( $ids ) ) { return; }
 
     global $wpdb;
 
-    $ids = $wpdb->get_col( $wpdb->remove_placeholder_escape( $wpdb->prepare('
+    $contents = $wpdb->get_col( $wpdb->prepare('
 
-        SELECT `post_id`
-        FROM `'.$wpdb->postmeta.'`
-        WHERE `meta_key` = %s AND `meta_value` LIKE %s
+        SELECT `post_content_filtered`
+        FROM `'.$wpdb->posts.'`
+        WHERE `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
-    ', $key, $wpdb->add_placeholder_escape( '%"'.$type.'"%' ) ) ) );
+    ', $ids ) );
 
-    return $ids;
+    return implode( '', $contents );
 }
 
-function get_to_defer( $ids ) {
+
+function get_rest_to_defer( $ids ) {
 
     global $wpdb;
 
@@ -188,25 +200,31 @@ function get_to_defer( $ids ) {
 
     ', array_merge( [ FCPFSC_PREF.'rest-css-defer', serialize(['on']) ], $ids ) ) ) );
 
-
     return $defer_ids;
 }
 
-function get_css_contents_filtered( $ids ) { // ++add proper ordering
+function defer_style($name, $priority = 10) {
+    static $store = [];
 
-    if ( empty( $ids ) ) { return; }
+    $name = array_diff( (array) $name, $store );
+    if ( empty( $name ) ) { return; }
 
-    global $wpdb;
+    $store = array_merge( $store, $name );
 
-    $metas = $wpdb->get_col( $wpdb->prepare('
-
-        SELECT `post_content_filtered`
-        FROM `'.$wpdb->posts.'`
-        WHERE `ID` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
-
-    ', $ids ) );
-
-    return implode( '', $metas );
+    add_filter( 'style_loader_tag', function ($tag, $handle) use ($name) {
+        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) ) { return $tag; }
+        return
+            str_replace( [ 'rel="stylesheet"', "rel='stylesheet'" ], [
+                'rel="preload" as="style" onload="this.onload=null;this.rel=\'stylesheet\'"',
+                "rel='preload' as='style' onload='this.onload=null;this.rel=\"stylesheet\"'"
+            ], $tag ).
+            '<noscript>'.str_replace(
+                [ ' id="'.$handle.'-css"', " id='".$handle."-css'" ], // remove doubling id
+                [ '', '' ],
+                substr( $tag, 0, -1 )
+            ).'</noscript>' . "\n"
+        ;
+    }, $priority, 2 );
 }
 
 function get_all_to_deregister( $ids ) {
@@ -235,3 +253,4 @@ function get_all_to_deregister( $ids ) {
 
     return [ $styles, $scripts ];
 }
+
