@@ -50,6 +50,7 @@ register_activation_hook( __FILE__, function() use ($meta_close_by_default) {
 } );
 
 function delete_the_plugin() {
+    return true;
     // delete the rest-storage // deprecated as it doesn't restore after re-install the plugin
     /*
     $dir = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ );
@@ -60,10 +61,10 @@ function delete_the_plugin() {
 }
 
 
-// ++refactor - split in files
 // ++add the option to switch to inline
 // ++add the option to defer loading
-// ++add the @bigger height@ button and save new height in local storage
+// ++autopick the names by url or the instruction how to
+// ++add the @bigger height@ button and save new height in local storage or user settings?
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error

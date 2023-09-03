@@ -18,7 +18,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives', 'development-mode', 'deregister-style-names', 'deregister-script-names', 'rest-css', 'rest-css-defer' ];
+        $fields = [ 'post-types', 'post-archives', 'development-mode', 'inline-style-names', 'inline-script-names', 'defer-style-names', 'defer-script-names', 'deregister-style-names', 'deregister-script-names', 'rest-css', 'rest-css-defer' ];
     } else {
         $fields = [ 'id', 'id-exclude' ];
     }
@@ -121,11 +121,23 @@ function sanitize_meta( $value, $field, $postID ) {
         case ( 'development-mode' ):
             return $onoff( $value );
         break;
+        case ( 'inline-style-names' ):
+            return $value;
+        break;
+        case ( 'inline-script-names' ):
+            return $value;
+        break;
+        case ( 'defer-style-names' ):
+            return $value;
+        break;
+        case ( 'defer-script-names' ):
+            return $value;
+        break;
         case ( 'deregister-style-names' ):
-            return $value; // ++preg_replace not letters ,space-_, lowercase?, 
+            return $value;
         break;
         case ( 'deregister-script-names' ):
-            return $value; // ++preg_replace not letters ,space-_, lowercase?, 
+            return $value;
         break;
         case ( 'rest-css' ):
 
