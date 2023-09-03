@@ -159,3 +159,35 @@ function sanitize_meta( $value, $field, $postID ) {
 
     return '';
 }
+
+function sanitize_css($css) {
+
+    $errors = [];
+
+    // try to escape tags inside svg with url-encoding
+    if ( strpos( $css, '<' ) !== false && preg_match( '/<\/?\w+/', $css ) ) {
+        // the idea is taken from https://github.com/yoksel/url-encoder/
+        $svg_sanitized = preg_replace_callback( '/url\(\s*(["\']*)\s*data:\s*image\/svg\+xml(.*)\\1\s*\)/', function($m) {
+            return 'url('.$m[1].'data:image/svg+xml'
+                .preg_replace_callback( '/[\r\n%#\(\)<>\?\[\]\\\\^\`\{\}\|]+/', function($m) {
+                    return urlencode( $m[0] );
+                }, urldecode( $m[2] ) )
+                .$m[1].')';
+        }, $css );
+
+        if ( $svg_sanitized !== null ) {
+            $css = $svg_sanitized;
+        }
+    }
+    // if tags still exist, forbid that
+    // the idea is taken from WP_Customize_Custom_CSS_Setting::validate as well as the translation
+    if ( strpos( $css, '<' ) !== false && preg_match( '/<\/?\w+/', $css ) ) {
+        $errors['tags'] = 'HTML ' . __( 'Markup is not allowed in CSS.' );
+    }
+
+    // ++strip <?php, <!--??
+    // ++maybe add parser sometime later
+    // ++safecss_filter_attr($css)??
+
+    return [$errors, $css];
+}

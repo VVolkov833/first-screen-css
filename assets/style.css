@@ -40,3 +40,13 @@ button[name=linewrap] {
 button[name=infinity] {
     top: 52px;
 }
+
+#first-screen-css-inline {
+    background-color: #B2DFDB;
+}
+#first-screen-css-defer {
+    background-color: #C5CAE9;
+}
+#first-screen-css-deregister {
+    background-color: #E1BEE7;
+}

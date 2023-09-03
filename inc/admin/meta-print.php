@@ -5,28 +5,28 @@
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
+$meta_close_by_default = [
+    FCPFSC_FRONT_NAME.'-css-rest',
+    FCPFSC_FRONT_NAME.'-css-inline',
+    FCPFSC_FRONT_NAME.'-css-defer',
+    FCPFSC_FRONT_NAME.'-css-deregister',
+];
+
 // admin controls
 add_action( 'add_meta_boxes', function() {
     if ( !current_user_can( 'administrator' ) ) { return; }
 
     add_meta_box(
-        FCPFSC_FRONT_PREF.'-css-bulk',
+        FCPFSC_FRONT_NAME.'-css-bulk',
         'Bulk apply',
         'FCP\FirstScreenCSS\css_type_meta_bulk_apply',
         FCPFSC_SLUG,
         'normal',
         'high'
     );
+
     add_meta_box(
-        FCPFSC_FRONT_PREF.'-css-disable',
-        'Deregister styles and scripts',
-        'FCP\FirstScreenCSS\css_type_meta_disable_styles',
-        FCPFSC_SLUG,
-        'normal',
-        'low'
-    );
-    add_meta_box(
-        FCPFSC_FRONT_PREF.'-css-rest',
+        FCPFSC_FRONT_NAME.'-css-rest',
         'The rest of CSS, which is a not-first-screen',
         'FCP\FirstScreenCSS\css_type_meta_rest_css',
         FCPFSC_SLUG,
@@ -34,9 +34,37 @@ add_action( 'add_meta_boxes', function() {
         'low'
     );
 
+    add_meta_box(
+        FCPFSC_FRONT_NAME.'-css-inline',
+        '<span>Specify Styles and Scripts for <font color=#2271b1>Inline</font> Inclusion</span>',
+        'FCP\FirstScreenCSS\css_type_meta_inline',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
+    );
+
+    add_meta_box(
+        FCPFSC_FRONT_NAME.'-css-defer',
+        '<span>Specify Styles and Scripts to <font color=#2271b1>Defer</font> loading</span>',
+        'FCP\FirstScreenCSS\css_type_meta_defer',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
+    );
+
+    add_meta_box(
+        FCPFSC_FRONT_NAME.'-css-deregister',
+        '<span>Specify Styles and Scripts to <font color=#2271b1>Deregister</font></span>',
+        'FCP\FirstScreenCSS\css_type_meta_deregister',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
+    );
+
+
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
-        FCPFSC_FRONT_PREF.'-css',
+        FCPFSC_FRONT_NAME.'-css',
         'Select First Screen CSS',
         'FCP\FirstScreenCSS\applied_type_meta_main',
         array_keys( $public_post_types ),
@@ -85,7 +113,53 @@ function css_type_meta_bulk_apply() {
     <?php
 }
 
-function css_type_meta_disable_styles() {
+function css_type_meta_inline() {
+    global $post;
+
+    ?><p><strong>List the names of STYLES to inline</strong></p><?php
+
+    input( (object) [
+        'name' => 'inline-style-names',
+        'placeholder' => 'my-theme-style, some-plugin-style',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'inline-style-names' )[0] ?? '',
+    ]);
+    ?>Separate names by comma. To inline all styles set *<?php
+
+    ?><p><strong>List the names of SCRIPTS to inline</strong></p><?php
+
+    input( (object) [
+        'name' => 'inline-script-names',
+        'placeholder' => 'my-theme-script, some-plugin-script',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'inline-script-names' )[0] ?? '',
+    ]);
+    ?>Separate names by comma. To inline all scripts set *<?php
+
+}
+
+function css_type_meta_defer() {
+    global $post;
+
+    ?><p><strong>List the names of STYLES to defer</strong></p><?php
+
+    input( (object) [
+        'name' => 'defer-style-names',
+        'placeholder' => 'my-theme-style, some-plugin-style',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'defer-style-names' )[0] ?? '',
+    ]);
+    ?>Separate names by comma. To defer all styles set *<?php
+
+    ?><p><strong>List the names of SCRIPTS to defer</strong></p><?php
+
+    input( (object) [
+        'name' => 'defer-script-names',
+        'placeholder' => 'my-theme-script, some-plugin-script',
+        'value' => get_post_meta( $post->ID, FCPFSC_PREF.'defer-script-names' )[0] ?? '',
+    ]);
+    ?>Separate names by comma. To defer all scripts set *<?php
+
+}
+
+function css_type_meta_deregister() {
     global $post;
 
     ?><p><strong>List the names of STYLES to deregister</strong></p><?php

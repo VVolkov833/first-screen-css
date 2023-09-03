@@ -20,7 +20,7 @@ define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ]
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
 define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
-define( 'FCPFSC_FRONT_PREF', 'first-screen' );
+define( 'FCPFSC_FRONT_NAME', 'first-screen' );
 
 define( 'FCPFSC_URL', plugin_dir_url( __FILE__ ) );
 define( 'FCPFSC_DIR', plugin_dir_path( __FILE__ ) );
@@ -33,15 +33,30 @@ require FCPFSC_DIR . 'inc/apply.php';
 require FCPFSC_DIR . 'inc/admin/main.php';
 
 
-register_activation_hook( __FILE__, function() {
+// install / uninstall the plugin
+register_activation_hook( __FILE__, function() use ($meta_close_by_default) {
+     // store the non-first-screen css (rest-css)
     wp_mkdir_p( wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) );
+
+    // close secondary meta boxes by default
+    $admins = get_users(['role' => 'administrator']);
+    foreach ($admins as $admin) {
+        // set the default state for the specified metaboxes
+        update_user_meta($admin->ID, 'closedpostboxes_'.FCPFSC_SLUG, $meta_close_by_default);
+    }
+
+    //
     register_uninstall_hook( __FILE__, 'FCP\FirstScreenCSS\delete_the_plugin' );
 } );
 
 function delete_the_plugin() {
+    // delete the rest-storage // deprecated as it doesn't restore after re-install the plugin
+    /*
     $dir = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ );
     array_map( 'unlink', glob( $dir . '/*' ) );
     rmdir( $dir );
+    //*/
+    // ++ add the setting to delete all the plugin's leftovers
 }
 
 
