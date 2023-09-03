@@ -25,6 +25,9 @@ define( 'FCPFSC_FRONT_NAME', 'first-screen' );
 define( 'FCPFSC_URL', plugin_dir_url( __FILE__ ) );
 define( 'FCPFSC_DIR', plugin_dir_path( __FILE__ ) );
 
+define( 'FCPFSC_REST_URL', wp_upload_dir()['baseurl'] . '/' . basename( FCPFSC_DIR ) );
+define( 'FCPFSC_REST_DIR', wp_upload_dir()['basedir'] . '/' . basename( FCPFSC_DIR ) );
+
 define( 'FCPFSC_CM_VER', '5.65.13' ); // codemirror version
 
 
@@ -36,7 +39,7 @@ require FCPFSC_DIR . 'inc/admin/main.php';
 // install / uninstall the plugin
 register_activation_hook( __FILE__, function() use ($meta_close_by_default) {
      // store the non-first-screen css (rest-css)
-    wp_mkdir_p( wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) );
+    wp_mkdir_p( FCPFSC_REST_DIR );
 
     // close secondary meta boxes by default
     $admins = get_users(['role' => 'administrator']);
@@ -53,9 +56,9 @@ function delete_the_plugin() {
     return true;
     // delete the rest-storage // deprecated as it doesn't restore after re-install the plugin
     /*
-    $dir = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ );
-    array_map( 'unlink', glob( $dir . '/*' ) );
-    rmdir( $dir );
+    $dir = FCPFSC_REST_DIR;
+    array_map( 'unlink', glob( FCPFSC_REST_DIR . '/*' ) );
+    rmdir( FCPFSC_REST_DIR );
     //*/
     // ++ add the setting to delete all the plugin's leftovers
 }

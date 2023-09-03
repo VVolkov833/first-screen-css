@@ -68,13 +68,13 @@ add_action( 'wp_enqueue_scripts', function() {
     add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
 
         foreach ( $csss as $id ) {
-            $path = '/' . basename( __DIR__ ) . '/style-'.$id.'.css';
-            if ( !is_file( wp_upload_dir()['basedir'] . $path ) ) { continue; }
+            $file = '/style-'.$id.'.css';
+            if ( !is_file( FCPFSC_REST_DIR.$file ) ) { continue; }
             wp_enqueue_style(
                 FCPFSC_FRONT_NAME.'-css-rest-'.$id,
-                wp_upload_dir()['baseurl'].$path,
+                FCPFSC_REST_URL.$file,
                 [],
-                filemtime( wp_upload_dir()['basedir'].$path ),
+                filemtime( FCPFSC_REST_DIR.$file ),
                 'all'
             );
         }
@@ -89,34 +89,42 @@ add_action( 'wp_enqueue_scripts', function() {
     }, 10 );
 
     //-------------------------------------------------------------------------------------
-    // deregister all existing styles
+
+    // defer styles and scripts
+    $defer = function() use ( $csss ) {
+
+        list( $styles, $scripts ) = get_ss_to_defer( $csss );
+
+        if ( in_array( '*', $styles ) ) { $styles = get_all_styles(); }
+        defer_style( $styles );
+
+        if ( in_array( '*', $scripts ) ) { $scripts = get_all_scripts(); }
+        defer_script( $scripts );
+
+    };
+    add_action( 'wp_enqueue_scripts', $defer, 100000 );
+    add_action( 'wp_footer', $defer, 1 );
+    add_action( 'wp_footer', $defer, 11 );    
+
+    // deregister styles and scripts
     $deregister = function() use ( $csss ) {
-        list( $styles, $scripts ) = get_all_to_deregister( $csss );
 
-        $deregister = function($list, $ss) {
+        $deregister_styles = function($list = []) {
             if ( empty( $list ) ) { return; }
-
-            if ( in_array( '*', $list ) ) { // get all registered
-                $global = 'wp_'.$ss.'s';
-                global $$global;
-
-                if ( !isset( $$global ) ) { return; }
-
-                $list = array_map( function( $el ) {
-                    $name = $el->handle;
-                    if ( strpos( $name, FCPFSC_FRONT_NAME ) === 0 ) { return ''; }
-                    return $name ?? '';
-                }, (array) $$global->registered ?? [] );
-            }
-
-            $func = 'wp_deregister_'.$ss;
-            foreach ( $list as $v ) {
-                $func( $v );
-            }
+            if ( in_array( '*', $list ) ) { $list = get_all_styles(); }
+            foreach ( $list as $v ) { wp_deregister_style( $v ); }
         };
 
-        $deregister( $styles, 'style' );
-        $deregister( $scripts, 'script' );
+        $deregister_scripts = function($list = []) {
+            if ( empty( $list ) ) { return; }
+            if ( in_array( '*', $list ) ) { $list = get_all_scripts(); }
+            foreach ( $list as $v ) { wp_deregister_script( $v ); }
+        };
+
+        list( $styles, $scripts ) = get_ss_to_deregister( $csss );
+
+        $deregister_styles( $styles );
+        $deregister_scripts( $scripts );
     };
     add_action( 'wp_enqueue_scripts', $deregister, 100000 );
     add_action( 'wp_footer', $deregister, 1 );
@@ -227,7 +235,32 @@ function defer_style($name, $priority = 10) {
     }, $priority, 2 );
 }
 
-function get_all_to_deregister( $ids ) {
+function defer_script($name, $priority = 10) {
+    static $store = [];
+
+    $name = array_diff( (array) $name, $store );
+    if ( empty( $name ) ) { return; }
+
+    $store = array_merge( $store, $name );
+
+    add_filter('script_loader_tag', function ($tag, $handle) use ($name) {
+        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) ) { return $tag; }
+        return str_replace( [' defer', ' src'], [' ', ' defer src'], $tag );
+    }, $priority, 2 );
+
+}
+
+
+function get_ss_to_inline($ids) {
+    return get_ss_to_($ids, 'inline');
+}
+function get_ss_to_defer($ids) {
+    return get_ss_to_($ids, 'defer');
+}
+function get_ss_to_deregister($ids) {
+    return get_ss_to_($ids, 'deregister');
+}
+function get_ss_to_($ids, $label) {
 
     if ( empty( $ids ) ) { return []; }
 
@@ -242,7 +275,7 @@ function get_all_to_deregister( $ids ) {
         WHERE ( `meta_key` = %s OR `meta_key` = %s ) AND `post_id` IN ( '.implode( ',', array_fill( 0, count( $ids ), '%s' ), ).' )
 
     ', array_merge(
-        [ FCPFSC_PREF.'deregister-style-names', FCPFSC_PREF.'deregister-script-names', FCPFSC_PREF.'deregister-style-names', FCPFSC_PREF.'deregister-script-names' ],
+        [ FCPFSC_PREF.$label.'-style-names', FCPFSC_PREF.$label.'-script-names', FCPFSC_PREF.$label.'-style-names', FCPFSC_PREF.$label.'-script-names' ],
         $ids
     ) ) ) );
 
@@ -254,3 +287,22 @@ function get_all_to_deregister( $ids ) {
     return [ $styles, $scripts ];
 }
 
+function get_all_styles() {
+    return get_all_ss_('style');
+}
+function get_all_scripts() {
+    return get_all_ss_('script');
+}
+function get_all_ss_($ss) {
+    $global = 'wp_'.$ss.'s';
+    global $$global;
+    if ( empty( $$global ) ) { return; }
+
+    $list = array_filter( array_map( function( $el ) {
+        $name = $el->handle;
+        if ( strpos( $name, FCPFSC_FRONT_NAME ) === 0 ) { return null; } // exclude those generated by the plugin
+        return $name ?? null;
+    }, (array) $$global->registered ?? [] ) );
+
+    return $list;
+}

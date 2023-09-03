@@ -24,7 +24,7 @@ add_action( 'save_post', function( $postID ) {
     }
 
     // exception for the rest-css ++ improve when having different function for processing values
-    $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
+    $file = FCPFSC_REST_DIR.'/style-'.$postID.'.css';
     @unlink( $file );
 
     foreach ( $fields as $f ) {
@@ -142,7 +142,7 @@ function sanitize_meta( $value, $field, $postID ) {
         case ( 'rest-css' ):
 
             list( $errors, $filtered ) = sanitize_css( wp_unslash( $value ) ); //++ move it all to a separate filter / actions, organize better with errors!!
-            $file = wp_upload_dir()['basedir'] . '/' . basename( __DIR__ ) . '/style-'.$postID.'.css';
+            $file = wp_upload_dir()['basedir'] . '/' . basename( FCPFSC_DIR ) . '/style-'.$postID.'.css';
 
             // correct
             if ( empty( $errors ) ) {

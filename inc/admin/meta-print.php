@@ -6,7 +6,7 @@ namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
 $meta_close_by_default = [
-    FCPFSC_FRONT_NAME.'-css-rest',
+    //FCPFSC_FRONT_NAME.'-css-rest', // ++ it breaks the codemirror loading if closed by default
     FCPFSC_FRONT_NAME.'-css-inline',
     FCPFSC_FRONT_NAME.'-css-defer',
     FCPFSC_FRONT_NAME.'-css-deregister',
