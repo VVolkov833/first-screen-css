@@ -1,5 +1,5 @@
 <?php
-
+// THE FILE WAS SPLIT INTO FILES IN FALDER inc/apply
 // apply new rules to the posts
 
 namespace FCP\FirstScreenCSS;
@@ -93,7 +93,7 @@ add_action( 'wp_enqueue_scripts', function() {
     // inline styles and scripts
     $inline = function() use ( $csss ) {
 
-        list( $styles, $scripts ) = get_ss_to_inline( $csss );
+        list( $styles, $scripts ) = get_names_to_inline( $csss );
 
         if ( in_array( '*', $styles ) ) { $styles = get_all_styles(); }
         inline_style( $styles );
@@ -109,7 +109,7 @@ add_action( 'wp_enqueue_scripts', function() {
     // defer styles and scripts
     $defer = function() use ( $csss ) {
 
-        list( $styles, $scripts ) = get_ss_to_defer( $csss );
+        list( $styles, $scripts ) = get_names_to_defer( $csss );
 
         if ( in_array( '*', $styles ) ) { $styles = get_all_styles(); }
         defer_style( $styles );
@@ -138,7 +138,7 @@ add_action( 'wp_enqueue_scripts', function() {
             foreach ( $list as $v ) { wp_deregister_script( $v ); }
         };
 
-        list( $styles, $scripts ) = get_ss_to_deregister( $csss );
+        list( $styles, $scripts ) = get_names_to_deregister( $csss );
 
         $deregister_styles( $styles );
         $deregister_scripts( $scripts );
@@ -228,6 +228,7 @@ function get_rest_to_defer( $ids ) {
     return $defer_ids;
 }
 
+
 function inline_style($name, $priority = 10) {
     static $store = [];
 
@@ -307,18 +308,21 @@ function defer_script($name, $priority = 10) {
 }
 
 
-function get_ss_to_inline($ids) {
-    return get_ss_to_($ids, 'inline');
+function get_names_to_inline($ids) {
+    return get_names_to_($ids, 'inline');
 }
-function get_ss_to_defer($ids) {
-    return get_ss_to_($ids, 'defer');
+function get_names_to_defer($ids) {
+    return get_names_to_($ids, 'defer');
 }
-function get_ss_to_deregister($ids) {
-    return get_ss_to_($ids, 'deregister');
+function get_names_to_deregister($ids) {
+    return get_names_to_($ids, 'deregister');
 }
-function get_ss_to_($ids, $label) {
+
+function get_names_to_($ids, $label) {
+    static $store = [];
 
     if ( empty( $ids ) ) { return []; }
+    if ( isset( $store[$label] ) ) { return $store[$label]; }
 
     global $wpdb;
 
@@ -340,7 +344,8 @@ function get_ss_to_($ids, $label) {
     $styles = $clear( $wpdb->get_col( null, 0 ) );
     $scripts = $clear( $wpdb->get_col( null, 1 ) );
 
-    return [ $styles, $scripts ];
+    $store[$label] = [$styles, $scripts];
+    return $store[$label];
 }
 
 function get_all_styles($data = false) {

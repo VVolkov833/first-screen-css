@@ -1,6 +1,6 @@
 <?php
 
-// list of functions
+// list of reused functions
 
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;

@@ -32,7 +32,7 @@ define( 'FCPFSC_CM_VER', '5.65.13' ); // codemirror version
 
 
 require FCPFSC_DIR . 'inc/functions.php';
-require FCPFSC_DIR . 'inc/apply.php';
+require FCPFSC_DIR . 'inc/apply/main.php';
 require FCPFSC_DIR . 'inc/admin/main.php';
 
 
