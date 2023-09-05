@@ -19,7 +19,7 @@ $inline_defer = function() use ($csss) {
     // defer
     list( $styles, $scripts ) = get_names_to_defer( $csss );
     defer_style( in_array( '*', $styles ) ? $all_styles : $styles );
-    defer_script( in_array( '*', $scripts ) ? $all_scripts : $scripts );
+    defer_script( in_array( '*', $scripts ) ? $all_scripts : $scripts ); // ++hoverintent-js is not effected - improve to fetch src directly from the tag
 };
 
 add_action( 'wp_enqueue_scripts', $inline_defer, 100000 );
@@ -46,8 +46,11 @@ function inline_style($name, $priority = 10) {
     $styles_data = get_all_styles(true);
 
     add_filter( 'style_loader_tag', function ($tag, $handle) use ($name, $styles_data) {
-        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) || $styles_data[ $handle ]['get'] === null ) { return $tag; }
-        $content = file_get_contents( $styles_data[ $handle ]['get'] );
+        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) ) { return $tag; }
+        // try to get the src directly from the tag
+        $path = $styles_data[ $handle ]['get'] !== null ? $styles_data[ $handle ]['get'] : get_href_from_link_tag( $tag );
+        if ( empty( $path ) ) { return $tag; }
+        $content = file_get_contents( $path );
         if ( empty( trim( $content ) ) ) { return $tag; }
         list( $errors, $sanitized ) = sanitize_css( $content );
         if ( !empty( $errors ) ) { return $tag; }
@@ -67,8 +70,11 @@ function inline_script($name, $priority = 10) {
     $scripts_data = get_all_scripts(true);
 
     add_filter( 'script_loader_tag', function ($tag, $handle) use ($name, $scripts_data) {
-        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) || $scripts_data[ $handle ]['get'] === null ) { return $tag; }
-        $content = file_get_contents( $scripts_data[ $handle ]['get'] );
+        if ( is_string( $name ) && $handle !== $name || is_array( $name ) && !in_array( $handle, $name ) ) { return $tag; }
+        // try to get the src directly from the tag
+        $path = $scripts_data[ $handle ]['get'] !== null ? $scripts_data[ $handle ]['get'] : get_src_from_script_tag( $tag );
+        if ( empty( $path ) ) { return $tag; }
+        $content = file_get_contents( $path );
         if ( empty( trim( $content ) ) ) { return $tag; }
         return '<script id="'.$handle.'-js">'.$content.'</script>';
     }, $priority, 2 );
@@ -112,3 +118,12 @@ function defer_script($name, $priority = 10) {
     }, $priority, 2 );
 
 }
+
+function get_src_from_script_tag($tag) {
+    if ( !preg_match_all( "/<script[^>]*src=['\"](http[^'\"]+)['\"][^>]*>/i", $tag, $matches ) ) { return null; }
+    return isset( $matches[1] ) && isset( $matches[1][0] ) ? $matches[1][0] : null;
+};
+function get_href_from_link_tag($tag) {
+    if ( !preg_match_all( "/<link[^>]*href=['\"](http[^'\"]+)['\"][^>]*>/i", $tag, $matches ) ) { return null; }
+    return isset( $matches[1] ) && isset( $matches[1][0] ) ? $matches[1][0] : null;
+};
