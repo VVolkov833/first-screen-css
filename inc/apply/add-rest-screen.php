@@ -18,7 +18,10 @@ add_action( 'wp_enqueue_scripts', function() use ( $csss ) {
             filemtime( FCPFSC_REST_DIR.$file ),
             'all'
         );
+        $has_rest = true;
     }
+
+    if ( !isset( $has_rest ) ) { return; }
 
     // defer loading the rest-screen styles
     $which_rest_to_defer = function( $ids ) {
