@@ -10,6 +10,7 @@ $meta_close_by_default = [
     FCPFSC_FRONT_NAME.'-css-inline',
     FCPFSC_FRONT_NAME.'-css-defer',
     FCPFSC_FRONT_NAME.'-css-deregister',
+    FCPFSC_FRONT_NAME.'-css-hints',
 ];
 
 // admin controls
@@ -27,7 +28,7 @@ add_action( 'add_meta_boxes', function() {
 
     add_meta_box(
         FCPFSC_FRONT_NAME.'-css-rest',
-        'The rest of CSS, which is a not-first-screen',
+        'Non-first-screen CSS',
         'FCP\FirstScreenCSS\css_type_meta_rest_css',
         FCPFSC_SLUG,
         'normal',
@@ -61,6 +62,15 @@ add_action( 'add_meta_boxes', function() {
         'low'
     );
 
+    add_meta_box(
+        FCPFSC_FRONT_NAME.'-css-hints',
+        'Instruction & Tools',
+        'FCP\FirstScreenCSS\css_type_meta_hints',
+        FCPFSC_SLUG,
+        'normal',
+        'low'
+    );
+
 
     list( 'public' => $public_post_types ) = get_all_post_types();
     add_meta_box(
@@ -81,7 +91,7 @@ function css_type_meta_bulk_apply() {
     // get post types to print options
     list( 'public' => $public_post_types, 'archive' => $archives_post_types ) = get_all_post_types();
 
-    ?><p><strong>Apply to the following post types</strong></p><?php
+    ?><p><strong>Apply to the post types:</strong></p><?php
 
     checkboxes( (object) [
         'name' => 'post-types',
@@ -89,7 +99,7 @@ function css_type_meta_bulk_apply() {
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-types' )[0] ?? '',
     ]);
 
-    ?><p><strong>Apply to the Archive pages of the following post types</strong></p><?php
+    ?><p><strong>Apply to the Archives:</strong></p><?php
 
     checkboxes( (object) [
         'name' => 'post-archives',
@@ -98,13 +108,12 @@ function css_type_meta_bulk_apply() {
     ]);
 
     ?>
-    <p>You can apply this styling to a separate post. Every public post type has a special select box in the right sidebar to pick this or any other first-screen-css.</p>
-    <p>You can grab the first screen css of a page with the script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+    <p>To apply this CSS Setting to a specific post, navigate to the desired post editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
     <?php
 
     checkboxes( (object) [
         'name' => 'development-mode',
-        'options' => ['on' => 'Development mode (apply only if the post is visited by administrator)'],
+        'options' => ['on' => 'Development mode (the Setting is visible only to administrators)'],
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'development-mode' )[0] ?? '',
     ]);
 
@@ -116,70 +125,75 @@ function css_type_meta_bulk_apply() {
 function css_type_meta_inline() {
     global $post;
 
-    ?><p><strong>List the names of STYLES to inline</strong></p><?php
+    ?><p><strong>List the names of STYLES to inline.</strong> Separate names by commas. To inline all styles set *</p><?php
 
     input( (object) [
         'name' => 'inline-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'inline-style-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To inline all styles set *<?php
 
-    ?><p><strong>List the names of SCRIPTS to inline</strong></p><?php
+
+    ?><p><strong>List the names of SCRIPTS to inline.</strong> Separate names by commas. To inline all scripts set *</p><?php
 
     input( (object) [
         'name' => 'inline-script-names',
         'placeholder' => 'my-theme-script, some-plugin-script',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'inline-script-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To inline all scripts set *<?php
 
 }
 
 function css_type_meta_defer() {
     global $post;
 
-    ?><p><strong>List the names of STYLES to defer</strong></p><?php
+    ?><p><strong>List the names of STYLES to defer.</strong> Separate names by commas. To defer all styles set *</p><?php
 
     input( (object) [
         'name' => 'defer-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'defer-style-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To defer all styles set *<?php
 
-    ?><p><strong>List the names of SCRIPTS to defer</strong></p><?php
+
+    ?><p><strong>List the names of SCRIPTS to defer.</strong> Separate names by commas. To defer all scripts set *</p><?php
 
     input( (object) [
         'name' => 'defer-script-names',
         'placeholder' => 'my-theme-script, some-plugin-script',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'defer-script-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To defer all scripts set *<?php
 
 }
 
 function css_type_meta_deregister() {
     global $post;
 
-    ?><p><strong>List the names of STYLES to deregister</strong></p><?php
+    ?><p><strong>List the names of STYLES to deregister.</strong> Separate names by commas. To deregister all styles set *</p><?php
 
     input( (object) [
         'name' => 'deregister-style-names',
         'placeholder' => 'my-theme-style, some-plugin-style',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-style-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To deregister all styles set *<?php
 
-    ?><p><strong>List the names of SCRIPTS to deregister</strong></p><?php
+
+    ?><p><strong>List the names of SCRIPTS to deregister.</strong> Separate names by commas. To deregister all scripts set *</p><?php
 
     input( (object) [
         'name' => 'deregister-script-names',
         'placeholder' => 'my-theme-script, some-plugin-script',
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'deregister-script-names' )[0] ?? '',
     ]);
-    ?>Separate names by comma. To deregister all scripts set *<?php
 
+}
+
+function css_type_meta_hints() {
+    ?>
+
+    <p>You can grab the first screen css of a page with the script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+
+    <?php
 }
 
 function css_type_meta_rest_css() {
@@ -193,7 +207,7 @@ function css_type_meta_rest_css() {
 
     checkboxes( (object) [
         'name' => 'rest-css-defer',
-        'options' => ['on' => 'Defer the not-first-screen CSS (avoid render-blicking)'],
+        'options' => ['on' => 'Defer the non-first-screen CSS to prevent render-blinking'],
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'rest-css-defer' )[0] ?? '',
     ]);
 }

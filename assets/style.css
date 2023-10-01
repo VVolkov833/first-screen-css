@@ -31,8 +31,9 @@ button[name=format], button[name=linewrap], button[name=infinity] {
     position: absolute;
     z-index: 1;
     top: 0;
-    left: -15px;
+    left: -20px;
     font-family: monospace;
+    transform: scale(0.85);
 }
 button[name=linewrap] {
     top: 26px;
@@ -42,11 +43,16 @@ button[name=infinity] {
 }
 
 #first-screen-css-inline {
-    background-color: #B2DFDB;
+    border-left: 5px solid #B2DFDB;
 }
 #first-screen-css-defer {
-    background-color: #C5CAE9;
+    border-left: 5px solid #C5CAE9;
 }
 #first-screen-css-deregister {
-    background-color: #E1BEE7;
+    border-left: 5px solid #E1BEE7;
+}
+#first-screen-css-inline:not(.closed),
+#first-screen-css-defer:not(.closed),
+#first-screen-css-deregister:not(.closed) {
+    padding-bottom: 25px;
 }
