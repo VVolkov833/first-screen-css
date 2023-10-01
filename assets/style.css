@@ -26,6 +26,9 @@
 .CodeMirror pre.CodeMirror-placeholder {
     color: #888;
 }
+[id^="first-screen-css"] input[type=text]::placeholder {
+    color: #999;
+}
 
 button[name=format], button[name=linewrap], button[name=infinity] {
     position: absolute;

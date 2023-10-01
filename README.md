@@ -1,16 +1,16 @@
-# FCP First Screen CSS
+# First Screen CSS & Settings
 
-Insert the inline CSS to the head tag of a website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
+Insert the inline CSS into your website's head tag. You can choose to inline, defer, or de-register existing styles and scripts. Additionally, you can add custom non-inline styles. Apply everything individually, by post-type, or for archives.
 
 ## Features
 
-* Apply to any single post / page / custom post-type
-* Apply to all posts of a particular post-type
-* Apply to the blog or any post-type archive
-* It minifies the CSS before printing
-* Deregister styles and scripts: all or by name
-* Apply the not-first-screen CSS separately
-* Defer the not-first-screen CSS loading
+* Full control over your website's CSS
+* Apply changes to individual posts/pages/custom post types
+* Apply changes to all posts of a specific type
+* Apply changes to the blog or any post-type archive
+* Inline, defer, or de-register Styles or JS
+* Automatic CSS minification
+* Edit CSS easily with the CodeMirror visual editor
 
 ## Demo
 
@@ -18,7 +18,8 @@ Insert the inline CSS to the head tag of a website, disable existing styles and 
 
 ## Usage
 
-* Install and activate the plugin
-* Go to the "First Screen CSS" menu item in the left sidebar of your wp-admin
-* Add New, insert your CSS
-* Pick where to apply and other options
+* Install and activate the plugin.
+* Navigate to "First Screen CSS" in the left sidebar of your wp-admin.
+* Click "Add New."
+* Input your CSS or adjust the settings.
+* Choose where to apply the changes and publish.

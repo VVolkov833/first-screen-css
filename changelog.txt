@@ -1,3 +1,10 @@
+= 1.6 =
+
+* Added the options to inline, defer and de-register CSS and JS
+* Enhanced the CodeMirror editor for CSS manipulation
+* Improved performance handling heavy CSS
+* Enhanced descriptions and added simplified instructions
+
 = 1.5 =
 
 * Added the Wrap button to softly break / unbreak long lines

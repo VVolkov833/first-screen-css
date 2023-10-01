@@ -2,29 +2,29 @@
 Contributors: Firmcatalyst
 Tags: inline, css, firstscreen, style, web vitals, cls, fcp, defer, dequeue, deregister
 Requires at least: 5.8
-Tested up to: 6.2
+Tested up to: 6.3
 Requires PHP: 7.4
-Stable tag: 1.5.02
-Author: Firmcatalyst, Vadim Volkov
+Stable tag: 1.6
+Author: Vadim Volkov, Firmcatalyst
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-FCP First Screen CSS inline
+First Screen CSS & Settings
 
 == Description ==
 
-Insert the inline CSS to the head tag of a website, disable existing styles and scripts, defer loading of not-first-screen style, apply to a single post or bulk.
+Insert the inline CSS into your website's head tag. You can choose to inline, defer, or de-register existing styles and scripts. Additionally, you can add custom non-inline styles. Apply everything individually, by post-type, or for archives.
 
 = Features =
 
-* Apply to any single post / page / custom post-type
-* Apply to all posts of a particular post-type
-* Apply to the blog or any post-type archive
-* It minifies the CSS before printing
-* Deregister styles and scripts: all or by name
-* Apply the not-first-screen CSS separately
-* Defer the not-first-screen CSS loading
+* Full control over your website's CSS
+* Apply changes to individual posts/pages/custom post types
+* Apply changes to all posts of a specific type
+* Apply changes to the blog or any post-type archive
+* Inline, defer, or de-register Styles or JS
+* Automatic CSS minification
+* Edit CSS easily with the CodeMirror visual editor
 
 = Demo =
 
@@ -32,10 +32,11 @@ Insert the inline CSS to the head tag of a website, disable existing styles and 
 
 = Usage =
 
-* Install and activate the plugin
-* Go to the "First Screen CSS" menu item in the left sidebar of your wp-admin
-* Add New, insert your CSS
-* Pick where to apply and other options
+* Install and activate the plugin.
+* Navigate to "First Screen CSS" in the left sidebar of your wp-admin.
+* Click "Add New."
+* Input your CSS or adjust the settings.
+* Choose where to apply the changes and publish.
 
 == Installation ==
 
@@ -44,13 +45,20 @@ Insert the inline CSS to the head tag of a website, disable existing styles and 
 
 == Development ==
 
-You can modify the code for your needs, or suggest improvemens on [GitHub](https://github.com/VVolkov833/first-screen-css). It is pretty transparent and well-commented.
+You can customize the code to suit your requirements or suggest improvements on [GitHub](https://github.com/VVolkov833/first-screen-css). The code is transparent and easy to understand.
 
 == Frequently Asked Questions ==
 
-Waiting for your questions, which you can ask [here](https://firmcatalyst.com/contact/) or via GitHub.
+Feel free to ask your questions [here](https://firmcatalyst.com/contact/) or through GitHub..
 
 == Upgrade Notice ==
+
+= 1.6 =
+
+* Added the options to inline, defer and de-register CSS and JS
+* Enhanced the CodeMirror editor for CSS manipulation
+* Improved performance handling heavy CSS
+* Enhanced descriptions and added simplified instructions
 
 = 1.5 =
 

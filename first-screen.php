@@ -1,12 +1,12 @@
 <?php
 /*
-Plugin Name: FCP First Screen CSS
-Description: Insert inline CSS to the head of the website, so the first screen renders with no jumps, which might improve the CLS web vital. Or for any other reason.
+Plugin Name: First Screen CSS & Settings
+Description: Insert the inline CSS into your website's head tag. You can choose to inline, defer, or de-register existing styles and scripts. Additionally, you can add custom non-inline styles. Apply everything individually, by post-type, or for archives.
 Version: 1.6
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
-Author: Firmcatalyst, Vadim Volkov
+Author: Vadim Volkov, Firmcatalyst
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html

@@ -10,7 +10,7 @@ $meta_close_by_default = [
     FCPFSC_FRONT_NAME.'-css-inline',
     FCPFSC_FRONT_NAME.'-css-defer',
     FCPFSC_FRONT_NAME.'-css-deregister',
-    FCPFSC_FRONT_NAME.'-css-hints',
+    FCPFSC_FRONT_NAME.'-css-tools',
 ];
 
 // admin controls
@@ -63,9 +63,9 @@ add_action( 'add_meta_boxes', function() {
     );
 
     add_meta_box(
-        FCPFSC_FRONT_NAME.'-css-hints',
-        'Instruction & Tools',
-        'FCP\FirstScreenCSS\css_type_meta_hints',
+        FCPFSC_FRONT_NAME.'-css-tools',
+        'Tools',
+        'FCP\FirstScreenCSS\css_type_meta_tools',
         FCPFSC_SLUG,
         'normal',
         'low'
@@ -108,7 +108,7 @@ function css_type_meta_bulk_apply() {
     ]);
 
     ?>
-    <p>To apply this CSS Setting to a specific post, navigate to the desired post editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
+    <p>To apply this CSS Settings to a <strong>specific post</strong>, navigate to the desired post editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
     <?php
 
     checkboxes( (object) [
@@ -188,10 +188,26 @@ function css_type_meta_deregister() {
 
 }
 
-function css_type_meta_hints() {
+function css_type_meta_tools() {
     ?>
+    <p>The set of CSS Settings above take effect once published and applied to any post, post-type or archieve of your website. To undo the impact save the post as a draft or&nbsp;delete&nbsp;it.</p>
+    <p>You can <strong>extract the First-screen CSS</strong> of any page using these scripts. The instructions are provided inside.</p>
+    <ul>
+        <li><a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a> - no @import support</li>
+        <li><a href="https://github.com/VVolkov833/first-screen-css-grabber/tree/import_support" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber/tree/import_support</a> - beta with @import support</li>
+    </ul>
+    <p>To <strong>obtain the names</strong> of all styles and scripts on any page, paste this script into the page's console:</p>
+    <code style="display:block"><pre>let csss = [];
+jQuery( 'link[rel=stylesheet]' ).each ( (i,e) => {
+    csss.push( e.id.replace( /\-css$/, '' ) )
+});
+console.log( 'The list of linked Styles:'+"\n" + csss.join( ', ' ) );
 
-    <p>You can grab the first screen css of a page with the script: <a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a></p>
+let jss = [];
+jQuery( 'script[id$=-js]' ).each ( (i,e) => {
+    jss.push( e.id.replace( /\-js$/, '' ) )
+});
+console.log( 'The list of linked Scripts:'+"\n" + jss.join( ', ' ) );</pre></code>
 
     <?php
 }

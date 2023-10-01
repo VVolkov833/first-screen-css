@@ -15,7 +15,7 @@ require FCPFSC_DIR . 'inc/admin/meta-save.php';
 // admin post type for css-s
 add_action( 'init', function() {
     $shorter = [
-        'name' => 'First Screen CSS',
+        'name' => 'First Screen CSS settings',
         'plural' => 'First Screen CSS',
         'public' => false,
     ];
