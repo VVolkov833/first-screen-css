@@ -1,10 +1,10 @@
-=== FCP First Screen CSS ===
+=== First Screen CSS & Settings ===
 Contributors: Firmcatalyst
-Tags: inline, css, firstscreen, style, web vitals, cls, fcp, defer, dequeue, deregister
+Tags: css, first screen, style, web vitals, inline, defer, deregister
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
-Stable tag: 1.6
+Stable tag: 1.6.1
 Author: Vadim Volkov, Firmcatalyst
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later
@@ -14,17 +14,17 @@ First Screen CSS & Settings
 
 == Description ==
 
-Insert the inline CSS into your website's head tag. You can choose to inline, defer, or de-register existing styles and scripts. Additionally, you can add custom non-inline styles. Apply everything individually, by post-type, or for archives.
+This is a professional tool to manipulate enqueued styles and scripts on your website and add custom CSS to first screen and not first screen optionally. Use it to improve your Core Web Vitals score or just add custom styling.
 
 = Features =
 
-* Full control over your website's CSS
+* Control your website's CSS
 * Apply changes to individual posts/pages/custom post types
 * Apply changes to all posts of a specific type
 * Apply changes to the blog or any post-type archive
 * Inline, defer, or de-register Styles or JS
-* Automatic CSS minification
 * Edit CSS easily with the CodeMirror visual editor
+* Automatic CSS minification
 
 = Demo =
 

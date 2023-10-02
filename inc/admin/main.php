@@ -65,3 +65,10 @@ add_action( 'init', function() {
     ];
     register_post_type( FCPFSC_SLUG, $args );
 });
+
+// link the new css from the plugins list
+add_filter( 'plugin_action_links_'.FCPFSC_BSN, function($links) {
+    $settings_link = '<a href="' . esc_url( admin_url( 'post-new.php?post_type='.FCPFSC_SLUG ) ) . '">Add new Settings</a>';
+    array_unshift( $links, $settings_link );
+    return $links;
+});

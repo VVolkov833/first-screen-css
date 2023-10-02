@@ -2,7 +2,7 @@ jQuery( document ).ready( $ => {
 
     const add_editor = textarea => {
 
-        const placeholder = `/* enter your css here */\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}`;
+        const placeholder = `/* enter your css here */`;//+`\n* {\n    border: 1px dotted red;\n    box-sizing: border-box;\n}`;
         const $editor = $( textarea );
     
         $editor.attr( 'placeholder', placeholder );

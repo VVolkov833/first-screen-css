@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: First Screen CSS & Settings
-Description: Insert the inline CSS into your website's head tag. You can choose to inline, defer, or de-register existing styles and scripts. Additionally, you can add custom non-inline styles. Apply everything individually, by post-type, or for archives.
-Version: 1.6
+Description: This is a professional tool to manipulate enqueued styles and scripts on your website and add custom CSS to first screen and not first screen optionally. Use it to improve your Core Web Vitals score or just add custom styling.
+Version: 1.6.1
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
@@ -15,7 +15,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
-define( 'FCPFSC_DEV', true );
+define( 'FCPFSC_DEV', false );
 define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
@@ -24,6 +24,7 @@ define( 'FCPFSC_FRONT_NAME', 'first-screen' );
 
 define( 'FCPFSC_URL', plugin_dir_url( __FILE__ ) );
 define( 'FCPFSC_DIR', plugin_dir_path( __FILE__ ) );
+define( 'FCPFSC_BSN', plugin_basename(__FILE__) );
 
 define( 'FCPFSC_REST_URL', wp_upload_dir()['baseurl'] . '/' . basename( FCPFSC_DIR ) );
 define( 'FCPFSC_REST_DIR', wp_upload_dir()['basedir'] . '/' . basename( FCPFSC_DIR ) );
