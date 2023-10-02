@@ -64,13 +64,8 @@ function delete_the_plugin() {
     // ++ add the setting to delete all the plugin's leftovers
 }
 
-
-// ++add the option to switch to inline
-// ++add the option to defer loading
-// ++autopick the names by url or the instruction how to
-// ++add the @bigger height@ button and save new height in local storage or user settings?
+// ++first field placeholder make more obvious
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
-// ++list of styles to defer like with deregister?
