@@ -16,6 +16,7 @@ jQuery( document ).ready( $ => {
             indentWithTabs: true,
             inputStyle: 'contenteditable',
             lineWrapping: true,
+            extraKeys: {"Ctrl-F": "findPersistent", "Ctrl-I": "jumpToLine"},
         });
 
         const $format_button = $( '<button name="format" class="button button-small" type="button" title="Format selection or whole content">{ }</button>' );

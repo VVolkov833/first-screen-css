@@ -53,6 +53,18 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     wp_enqueue_script( $cm.'-addon-placeholder', FCPFSC_URL . 'assets/codemirror/addon/display/placeholder.js', [$cm], FCPFSC_CM_VER );
     wp_enqueue_script( $cm.'-formatting', FCPFSC_URL . 'assets/codemirror/util/formatting.js', [$cm], '2.38+' );
 
+    // comfortable search
+    wp_enqueue_style( $cm.'-addon-dialog', FCPFSC_URL . 'assets/codemirror/addon/dialog/dialog.css', [], FCPFSC_CM_VER );
+    wp_enqueue_style( $cm.'-addon-matchsonscrollbar', FCPFSC_URL . 'assets/codemirror/addon/search/matchesonscrollbar.css', [], FCPFSC_CM_VER );
+
+    wp_enqueue_script( $cm.'-addon-dialog', FCPFSC_URL . 'assets/codemirror/addon/dialog/dialog.js', [$cm], FCPFSC_CM_VER );
+    wp_enqueue_script( $cm.'-addon-searchcursor', FCPFSC_URL . 'assets/codemirror/addon/search/searchcursor.js', [$cm], FCPFSC_CM_VER );
+    wp_enqueue_script( $cm.'-addon-search', FCPFSC_URL . 'assets/codemirror/addon/search/search.js', [$cm], FCPFSC_CM_VER );
+    wp_enqueue_script( $cm.'-addon-annotatescrollbar', FCPFSC_URL . 'assets/codemirror/addon/scroll/annotatescrollbar.js', [$cm], FCPFSC_CM_VER );
+    wp_enqueue_script( $cm.'-addon-matchesonscrollbar', FCPFSC_URL . 'assets/codemirror/addon/search/matchesonscrollbar.js', [$cm], FCPFSC_CM_VER );
+    wp_enqueue_script( $cm.'-addon-jump-to-line', FCPFSC_URL . 'assets/codemirror/addon/search/jump-to-line.js', [$cm], FCPFSC_CM_VER );
+
+
     // codemirror init
     wp_enqueue_script( $cm.'-init', FCPFSC_URL . '/assets/codemirror/init.js', [$cm], FCPFSC_VER  );
 

@@ -209,6 +209,18 @@ jQuery( 'script[id$=-js]' ).each ( (i,e) => {
 });
 console.log( 'The list of linked Scripts:'+"\n" + jss.join( ', ' ) );</pre></code>
 
+    <p><strong>HotKeys for the Editor</strong></p>
+    <ul class="hints">
+        <li><code>Ctrl + F</code> - search
+            <ul>
+                <li><code>Enter</code> - search next</li>
+                <li><code>Shift + Enter</code> - search previous</li>
+            </ul>
+        </li>
+        <li><code>Shift + Ctrl + F</code> - search and replace interface</li>
+        <li><code>Ctrl + I</code> - jump to line by number</li>
+        <li><strong><code>Esc</code></strong> - cancel current command to start a new one</li>
+    </ul>
     <?php
 }
 
