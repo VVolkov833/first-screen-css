@@ -54,7 +54,7 @@ function inline_style($name, $priority = 10) {
         if ( empty( trim( $content ) ) ) { return $tag; }
         list( $errors, $sanitized ) = sanitize_css( $content );
         if ( !empty( $errors ) ) { return $tag; }
-        $sanitized = FCPFSC_DEV ? css_minify( $sanitized ) : $sanitized;
+        $sanitized = FCPFSC_DEV ? $sanitized : css_minify( $sanitized );
         return '<style id="'.$handle.'-css">'.$sanitized.'</style>';
     }, $priority, 2 );
 }

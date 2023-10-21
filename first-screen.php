@@ -2,7 +2,7 @@
 /*
 Plugin Name: First Screen CSS & Settings
 Description: This is a professional tool to manipulate enqueued styles and scripts on your website and add custom CSS to first screen and not first screen optionally. Use it to improve your Core Web Vitals score or just add custom styling.
-Version: 1.6.2
+Version: 1.6.3
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
@@ -15,8 +15,8 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.html
 namespace FCP\FirstScreenCSS;
 defined( 'ABSPATH' ) || exit;
 
-define( 'FCPFSC_DEV', true );
-define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) );
+define( 'FCPFSC_DEV', false ); // for own assets and minifying inlined styles
+define( 'FCPFSC_VER', get_file_data( __FILE__, [ 'ver' => 'Version' ] )[ 'ver' ] . ( FCPFSC_DEV ? time() : '' ) ); // only for own plugin's assets
 
 define( 'FCPFSC_SLUG', 'fcpfsc' );
 define( 'FCPFSC_PREF', FCPFSC_SLUG.'-' );
@@ -69,3 +69,4 @@ function delete_the_plugin() {
 // ++maybe limit the id-exclude to the fitting post types
 // ++don't show rest meta box if the storing dir is absent or is not writable or/and the permission error
 // ++get the list of css to unload with jQuery.html() && regexp, or ?query in url to print loaded scripts
+// ++dont minify if local dev mode is on + add the comment for the content source
