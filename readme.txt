@@ -4,7 +4,7 @@ Tags: css, first screen, style, web vitals, inline, defer, deregister
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
-Stable tag: 1.6.3
+Stable tag: 1.6.4
 Author: Vadim Volkov, Firmcatalyst
 Author URI: https://firmcatalyst.com
 License: GPL v3 or later

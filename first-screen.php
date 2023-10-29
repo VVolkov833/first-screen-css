@@ -2,7 +2,7 @@
 /*
 Plugin Name: First Screen CSS & Settings
 Description: This is a professional tool to manipulate enqueued styles and scripts on your website and add custom CSS to first screen and not first screen optionally. Use it to improve your Core Web Vitals score or just add custom styling.
-Version: 1.6.3
+Version: 1.6.4
 Requires at least: 5.8
 Tested up to: 6.3
 Requires PHP: 7.4
