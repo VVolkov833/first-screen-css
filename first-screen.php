@@ -64,6 +64,9 @@ function delete_the_plugin() {
     // ++ add the setting to delete all the plugin's leftovers
 }
 
+// ++Ctrl + H
+// ++highlight the developers mode as it can be the source of rage
+// ++add those metas to the table too
 // ++first field placeholder make more obvious
 // ++switch selects to checkboxes or multiples
 // ++maybe limit the id-exclude to the fitting post types
