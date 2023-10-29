@@ -65,6 +65,7 @@ function delete_the_plugin() {
 }
 
 // ++Ctrl + H
+// ++make the difference between first and second codemirrors more visible
 // ++highlight the developers mode as it can be the source of rage
 // ++add those metas to the table too
 // ++first field placeholder make more obvious
