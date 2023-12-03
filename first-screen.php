@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name: First Screen CSS & Settings
-Description: This is a professional tool to manipulate enqueued styles and scripts on your website and add custom CSS to first screen and not first screen optionally. Use it to improve your Core Web Vitals score or just add custom styling.
-Version: 1.6.4
+Description: This is a professional tool to manipulate enqueued Styles and Scripts on your website; add custom CSS to the first screen and not first screen optionally, choose where to apply. Use it to improve your Core Web Vitals score or just add custom styling.
+Version: 1.7.0
 Requires at least: 5.8
-Tested up to: 6.3
+Tested up to: 6.4
 Requires PHP: 7.4
 Author: Vadim Volkov, Firmcatalyst
 Author URI: https://firmcatalyst.com

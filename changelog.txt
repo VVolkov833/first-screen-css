@@ -1,3 +1,8 @@
+= 1.7 =
+
+* Added the option to apply Settings by Template
+* Added useful functions to CodeMirror editor
+
 = 1.6 =
 
 * Added the options to inline, defer and de-register CSS and JS
