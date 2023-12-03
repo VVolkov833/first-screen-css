@@ -24,16 +24,18 @@ add_action( 'wp_enqueue_scripts', function() {
     }
 
     if ( is_singular( $post_type ) ) {
-        // get css by post id 
+    // get css by post id 
         if ( $css_id = get_post_meta( $qo->ID, FCPFSC_PREF.'id' )[0] ?? null ) {
             $csss[] = $css_id;
         }
 
-        // get css by post-type
+    // get css by post-type
         //if ( (int) get_option('page_on_front') !== (int) $qo->ID ) { // exclude the front-page, as they stand out, mostly
         $csss = array_merge( $csss, get_fcpfsc_ids( FCPFSC_PREF.'post-types', $post_type ) );
         //}
     }
+
+    // get css by archive
     if ( is_home() || is_archive() && ( !$post_type || $post_type === 'page' ) ) {
         // get css for blog
         $csss = array_merge( $csss, get_fcpfsc_ids( FCPFSC_PREF.'post-archives', 'blog' ) );
@@ -43,9 +45,17 @@ add_action( 'wp_enqueue_scripts', function() {
         $csss = array_merge( $csss, get_fcpfsc_ids( FCPFSC_PREF.'post-archives', $post_type ) );
     }
 
+    // get css by template
+    $template = get_page_template_slug( $qo->ID );
+    if ( $template ) { // not default '' and not not-applied false
+        $csss = array_merge( $csss, get_fcpfsc_ids( FCPFSC_PREF.'post-templates', $template ) );
+    }
+    
+
+
     if ( empty( $csss ) ) { return; }
 
-    // filter by post_status, post_type, development-mode
+    // filter by css-post_status, post_type, development-mode
     $csss = filter_csss( $csss );
 
     // filter by exclude

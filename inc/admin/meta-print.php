@@ -109,7 +109,7 @@ function css_type_meta_bulk_apply() {
     ]);
 
     if ($all_templates) {
-        ?><p><strong>Apply to the Templates</strong> (of chosen post types):</p><?php
+        ?><p><strong>Apply to the Templates</strong> (doesn't depend on the options above):</p><?php
 
         checkboxes( (object) [
             'name' => 'post-templates',
@@ -201,7 +201,7 @@ function css_type_meta_deregister() {
 
 function css_type_meta_tools() {
     ?>
-    <p>The set of CSS Settings above take effect once published and applied to any post, post-type or archieve of your website. To undo the impact save the post as a draft or&nbsp;delete&nbsp;it.</p>
+    <p>The set of CSS Settings above take effect once published and applied to any post, post-type or archive of your website. To undo the impact save the post as a draft or&nbsp;delete&nbsp;it.</p>
     <p>You can <strong>extract the First-screen CSS</strong> of any page using these scripts. The instructions are provided inside.</p>
     <ul>
         <li><a href="https://github.com/VVolkov833/first-screen-css-grabber" target="_blank" rel="noopener">github.com/VVolkov833/first-screen-css-grabber</a> - no @import support</li>
