@@ -109,7 +109,7 @@ function css_type_meta_bulk_apply() {
     ]);
 
     if ($all_templates) {
-        ?><p><strong>Apply to the Templates:</strong></p><?php
+        ?><p><strong>Apply to the Templates</strong> (of chosen post types):</p><?php
 
         checkboxes( (object) [
             'name' => 'post-templates',
@@ -119,7 +119,7 @@ function css_type_meta_bulk_apply() {
     }
 
     ?>
-    <p>To apply this CSS Settings to a <strong>specific post</strong>, navigate to the desired post editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
+    <p>To apply this CSS Settings to a <strong>specific post</strong>, navigate to the desired post post-editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
     <?php
 
     checkboxes( (object) [
