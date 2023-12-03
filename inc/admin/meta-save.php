@@ -18,7 +18,7 @@ add_action( 'save_post', function( $postID ) {
 
 
     if ( $post->post_type === FCPFSC_SLUG ) {
-        $fields = [ 'post-types', 'post-archives', 'development-mode', 'inline-style-names', 'inline-script-names', 'defer-style-names', 'defer-script-names', 'deregister-style-names', 'deregister-script-names', 'rest-css', 'rest-css-defer' ];
+        $fields = [ 'post-types', 'post-archives', 'post-templates', 'development-mode', 'inline-style-names', 'inline-script-names', 'defer-style-names', 'defer-script-names', 'deregister-style-names', 'deregister-script-names', 'rest-css', 'rest-css-defer' ];
     } else {
         $fields = [ 'id', 'id-exclude' ];
     }
@@ -117,6 +117,9 @@ function sanitize_meta( $value, $field, $postID ) {
         break;
         case ( 'post-archives' ):
             return array_intersect( $value, array_keys( get_all_post_types()['archive'] ) );
+        break;
+        case ( 'post-templates' ):
+            return array_intersect( $value, array_keys( get_all_templates() ) );
         break;
         case ( 'development-mode' ):
             return $onoff( $value );

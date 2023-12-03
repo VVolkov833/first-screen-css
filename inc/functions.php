@@ -31,6 +31,10 @@ function get_all_post_types() {
 
 }
 
+function get_all_templates() {
+    return array_flip( \get_page_templates() );
+}
+
 function css_minify($css) {
     $preg_replace = function($regexp, $replace, $string) { // avoid null result so that css still works even though not fully minified
         return preg_replace( $regexp, $replace, $string ) ?: $string . '/* --- failed '.$regexp.', '.$replace.' */';

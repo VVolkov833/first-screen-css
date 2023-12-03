@@ -90,6 +90,7 @@ function css_type_meta_bulk_apply() {
 
     // get post types to print options
     list( 'public' => $public_post_types, 'archive' => $archives_post_types ) = get_all_post_types();
+    $all_templates = get_all_templates();
 
     ?><p><strong>Apply to the post types:</strong></p><?php
 
@@ -106,6 +107,16 @@ function css_type_meta_bulk_apply() {
         'options' => $archives_post_types,
         'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-archives' )[0] ?? '',
     ]);
+
+    if ($all_templates) {
+        ?><p><strong>Apply to the Templates:</strong></p><?php
+
+        checkboxes( (object) [
+            'name' => 'post-templates',
+            'options' => get_all_templates(),
+            'value' => get_post_meta( $post->ID, FCPFSC_PREF.'post-templates' )[0] ?? '',
+        ]);
+    }
 
     ?>
     <p>To apply this CSS Settings to a <strong>specific post</strong>, navigate to the desired post editor and choose this Setting from the dropdown menu located in the right sidebar.</p>
