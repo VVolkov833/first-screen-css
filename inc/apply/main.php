@@ -46,8 +46,7 @@ add_action( 'wp_enqueue_scripts', function() {
     }
 
     // get css by template
-    $template = get_page_template_slug( $qo->ID );
-    if ( $template ) { // not default '' and not not-applied false
+    if ( isset($qo->ID) && $template = get_page_template_slug( $qo->ID ) ) { // not default '' and not not-applied false
         $csss = array_merge( $csss, get_fcpfsc_ids( FCPFSC_PREF.'post-templates', $template ) );
     }
     
@@ -59,7 +58,7 @@ add_action( 'wp_enqueue_scripts', function() {
     $csss = filter_csss( $csss );
 
     // filter by exclude
-    if ( $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ?? null ) {
+    if ( isset($qo->ID) && $css_exclude = get_post_meta( $qo->ID, FCPFSC_PREF.'id-exclude' )[0] ?? null ) {
         $csss = array_values( array_diff( $csss, [ $css_exclude ] ) );
     }
 
